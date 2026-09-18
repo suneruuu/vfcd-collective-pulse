@@ -18,12 +18,7 @@ export function QuestionList({ prompts, currentId, disabled, move, onVisibility,
             (drag.draggedId === prompt.id ? " is-dragging" : "") +
             (drag.targetId === prompt.id ? " is-drop-target" : "");
           return (
-            <li
-              key={prompt.id}
-              className={className}
-              data-id={prompt.id}
-              {...drag.rowProps(prompt.id)}
-            >
+            <li key={prompt.id} className={className} data-id={prompt.id}>
               <button
                 className="drag-handle"
                 data-action="drag"

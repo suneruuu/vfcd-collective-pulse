@@ -105,13 +105,18 @@
   outline-offset: 3px;
 }
 .drag-handle {
-  width: max(28px, calc(24 * var(--ui)));
+  width: 100%;
+  min-width: 28px;
   height: max(32px, calc(45 * var(--sy)));
   padding: 0;
   background: none;
   border: none;
   cursor: grab !important;
   touch-action: none;
+  user-select: none;
+}
+.drag-handle img {
+  pointer-events: none;
 }
 .drag-handle:active {
   cursor: grabbing !important;
@@ -182,7 +187,7 @@
   opacity: 0;
 }
 .question-row:hover .row-moves,
-.question-row:focus-within .row-moves {
+.question-row:has(:focus-visible) .row-moves {
   opacity: 1;
 }
 .row-moves button {

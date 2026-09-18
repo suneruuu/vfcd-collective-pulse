@@ -8,6 +8,7 @@ for (const name of [
   "overview",
   "prompt",
   "react",
+  "reordering",
   "cloud",
   "cloud-http",
 ]) {

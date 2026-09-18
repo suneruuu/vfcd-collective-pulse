@@ -6,6 +6,7 @@ export function QueueIcon({ name, className }) {
       width="24"
       height="24"
       className={className}
+      draggable={false}
       alt=""
     />
   );

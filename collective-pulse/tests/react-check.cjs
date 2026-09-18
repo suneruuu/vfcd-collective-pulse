@@ -298,6 +298,13 @@ function reactChecks() {
   assert.equal((markup.match(/class="question-row/g) || []).length, Queue.defaults.length);
   assert(markup.includes("question-row is-hidden"));
   assert(markup.includes("question-row is-current"));
+  const handles = [...markup.matchAll(/<button[^>]*class="drag-handle"[^>]*>.*?<\/button>/g)];
+  assert.equal(handles.length, Queue.defaults.length);
+  assert(handles.every(([handle]) => /<button[^>]*draggable="false"/.test(handle)));
+  const icons = handles.map(([handle]) => handle.match(/<img[^>]*queue-drag\.svg[^>]*>/)?.[0]);
+  assert.equal(icons.length, Queue.defaults.length);
+  assert(icons.every((icon) => icon?.includes('draggable="false"')));
+
   assert.equal(getConnectionStatus(state).received, true);
   state.queue.installation.revision = 3;
   assert.equal(getConnectionStatus(state).received, false);
