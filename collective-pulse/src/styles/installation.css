@@ -389,6 +389,23 @@ canvas {
   top: calc(33 * var(--sy));
   width: calc(20 * var(--ui));
   height: calc(20 * var(--ui));
+  animation: schedule-live-blink 1.2s step-end infinite;
+}
+
+@keyframes schedule-live-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .schedule-live-icon {
+    animation: none;
+  }
 }
 
 #schedule-weekday {
