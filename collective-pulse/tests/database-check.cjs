@@ -20,21 +20,41 @@ if (!bin)
   throw new Error("Install PostgreSQL or set PULSE_POSTGRES_BIN to run isolated database checks.");
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), "pulse-db-"));
 const dataDir = path.join(temp, "data");
+const serverLog = path.join(temp, "postgres.log");
+const controlLog = path.join(temp, "pg_ctl.log");
 let port,
   started = false;
 function command(name, args, input) {
-  return spawnSync(path.join(bin, name + suffix), args, {
-    input,
-    encoding: "utf8",
-    windowsHide: true,
-    timeout: 30000,
-    ...(name === "pg_ctl" ? { stdio: "ignore" } : {}),
-  });
+  // Files preserve startup diagnostics without leaving pipes open in the
+  // background PostgreSQL process (which can block spawnSync on Windows).
+  const output = name === "pg_ctl" ? fs.openSync(controlLog, "w") : undefined;
+  let result;
+  try {
+    result = spawnSync(path.join(bin, name + suffix), args, {
+      input,
+      encoding: "utf8",
+      windowsHide: true,
+      timeout: 30000,
+      ...(output !== undefined ? { stdio: ["ignore", output, output] } : {}),
+    });
+  } finally {
+    if (output !== undefined) fs.closeSync(output);
+  }
+  if (output !== undefined) result.stdout = fs.readFileSync(controlLog, "utf8");
+  return result;
 }
 function checked(name, args, input) {
   const result = command(name, args, input);
-  if (result.error || result.status !== 0)
-    throw new Error(result.error?.message || result.stderr || result.stdout);
+  if (result.error || result.status !== 0) {
+    const details = [result.error?.message, result.stderr, result.stdout];
+    if (name === "pg_ctl" && fs.existsSync(serverLog))
+      details.push(fs.readFileSync(serverLog, "utf8"));
+    throw new Error(
+      ["PostgreSQL " + name + " failed (exit " + result.status + ").", ...details]
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }
   return (result.stdout || "").trim();
 }
 const psqlArgs = () => [
@@ -94,12 +114,15 @@ async function main() {
     "--no-locale",
     "--encoding=UTF8",
   ]);
+  // The suite connects over TCP. Linux packages can default to a protected
+  // system socket directory, which a regular CI user cannot write to.
+  fs.appendFileSync(path.join(dataDir, "postgresql.conf"), "\nunix_socket_directories = ''\n");
   started = true;
   checked("pg_ctl", [
     "-D",
     dataDir,
     "-l",
-    path.join(temp, "postgres.log"),
+    serverLog,
     "-o",
     `-p ${port} -h 127.0.0.1`,
     "-w",
