@@ -233,19 +233,39 @@ canvas {
   width: var(--main-width);
   height: calc(1081 * var(--sy));
   background: rgb(255 255 255 / 1%);
-  backdrop-filter: blur(calc(15 * var(--ui)));
   -webkit-backdrop-filter: blur(calc(15 * var(--ui)));
+  backdrop-filter: blur(calc(15 * var(--ui)));
+  transition:
+    background-color 240ms ease,
+    -webkit-backdrop-filter 240ms ease,
+    backdrop-filter 240ms ease,
+    display 240ms;
+  transition-behavior: allow-discrete;
 }
 
-#campaign-screen[hidden],
+#campaign-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgb(0 0 0 / 35%) 0%, rgb(0 0 0 / 35%) 55%, #000 80%);
+  opacity: 1;
+  pointer-events: none;
+  transition: opacity 240ms ease;
+}
+
+#campaign-screen[data-preview="true"]::before,
+#campaign-screen[hidden]::before {
+  opacity: 0;
+}
+
 #view-pulse[hidden] {
   display: none;
 }
 
 #campaign-screen[data-phase="before-event"] {
   background: #000;
-  backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 #campaign-screen p {
@@ -323,13 +343,30 @@ canvas {
 
 #campaign-screen[data-preview="true"] {
   background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  -webkit-backdrop-filter: blur(0px);
+  backdrop-filter: blur(0px);
   pointer-events: none;
 }
 
-#campaign-screen[data-preview="true"] .campaign-screen-copy {
+#campaign-screen[hidden] {
   display: none;
+  background: transparent;
+  -webkit-backdrop-filter: blur(0px);
+  backdrop-filter: blur(0px);
+  pointer-events: none;
+}
+
+#campaign-screen[data-preview="true"] .campaign-screen-copy,
+#campaign-screen[hidden] .campaign-screen-copy,
+#campaign-screen[hidden] #view-pulse {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #campaign-screen,
+  #campaign-screen::before {
+    transition: none;
+  }
 }
 
 #festival-schedule[data-phase]:not([data-phase="open"]) .schedule-live-icon,
