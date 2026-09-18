@@ -298,6 +298,7 @@ function reactChecks() {
   assert.equal((markup.match(/class="question-row/g) || []).length, Queue.defaults.length);
   assert(markup.includes("question-row is-hidden"));
   assert(markup.includes("question-row is-current"));
+  assert.equal((markup.match(/data-action="delete"/g) || []).length, Queue.defaults.length);
   const handles = [...markup.matchAll(/<button[^>]*class="drag-handle"[^>]*>.*?<\/button>/g)];
   assert.equal(handles.length, Queue.defaults.length);
   assert(handles.every(([handle]) => /<button[^>]*draggable="false"/.test(handle)));

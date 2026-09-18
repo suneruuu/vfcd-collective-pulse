@@ -1,6 +1,14 @@
 import { QueueIcon } from "./QueueIcon.jsx";
 import { useReordering } from "../hooks/useReordering.js";
-export function QuestionList({ prompts, currentId, disabled, move, onVisibility, onEdit }) {
+export function QuestionList({
+  prompts,
+  currentId,
+  disabled,
+  move,
+  onVisibility,
+  onEdit,
+  onDelete,
+}) {
   const drag = useReordering({
     prompts,
     disabled,
@@ -49,6 +57,18 @@ export function QuestionList({ prompts, currentId, disabled, move, onVisibility,
                 >
                   <QueueIcon name="edit" />
                   <span>Edit</span>
+                </button>
+                <button
+                  className="trash-button"
+                  data-action="delete"
+                  type="button"
+                  disabled={disabled}
+                  title="Delete question"
+                  aria-label={"Delete question " + (index + 1)}
+                  onClick={() => onDelete(prompt)}
+                >
+                  <QueueIcon name="trash" />
+                  <span>Delete</span>
                 </button>
               </div>
               <span className="row-number">{String(index + 1).padStart(2, "0")}</span>

@@ -62,6 +62,7 @@ export function PromptManagerShell({
             })
           }
           onEdit={setEditing}
+          onDelete={(prompt) => mutate({ operation: "delete", id: prompt.id })}
         />
         <p id="queue-message" role="status" aria-live="polite" data-error={String(state.error)}>
           {state.message}

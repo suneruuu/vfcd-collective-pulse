@@ -65,7 +65,7 @@
 .question-row {
   display: grid;
   grid-template-columns:
-    calc(61 * var(--sx)) calc(242 * var(--sx)) calc(63 * var(--sx)) calc(89 * var(--sx))
+    calc(61 * var(--sx)) max(250px, calc(350 * var(--sx))) calc(63 * var(--sx)) calc(89 * var(--sx))
     1fr auto;
   align-items: center;
   min-height: max(48px, calc(60 * var(--sy)));
@@ -132,7 +132,8 @@
   background: #000;
   color: #fff;
   border: 1px solid currentColor;
-  width: 50%;
+  flex: 1;
+  min-width: 0;
   height: max(32px, calc(45 * var(--sy)));
   padding: 0 8px;
   display: flex;
@@ -142,6 +143,9 @@
   font-size: clamp(12px, calc(20 * var(--ui)), 20px);
   font-weight: 700;
   text-transform: uppercase;
+}
+.row-actions .trash-button {
+  flex: 1.35;
 }
 .row-actions button + button {
   margin-left: -1px;
@@ -239,6 +243,12 @@
 }
 .queue-composer input::placeholder {
   color: #888;
+}
+.queue-composer input:focus {
+  outline: none;
+}
+.queue-composer button:focus-visible {
+  outline-color: #fff;
 }
 .queue-composer button {
   border: 0;
@@ -381,7 +391,7 @@
 }
 @media (max-width: 1100px) {
   .question-row {
-    grid-template-columns: 36px 152px 12px 64px 1fr auto;
+    grid-template-columns: 36px 250px 12px 64px 1fr auto;
   }
   .row-actions button {
     gap: 6px;
@@ -437,6 +447,15 @@
   .row-actions button {
     height: 32px;
     font-size: 12px;
+  }
+  .row-actions button span {
+    display: none;
+  }
+  .row-actions .trash-button {
+    flex: 0 0 80px;
+  }
+  .row-actions .trash-button span {
+    display: inline;
   }
   .row-actions img {
     width: 16px;

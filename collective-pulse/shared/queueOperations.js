@@ -40,6 +40,10 @@ export function applyQueueOperation(queue, body, live, newId) {
       if (typeof body.hidden !== "boolean") fail(400, "Invalid visibility.");
       prompt.hidden = body.hidden;
     }
+  } else if (body.operation === "delete") {
+    const index = prompts.findIndex((prompt) => prompt.id === body.id);
+    if (index < 0) fail(404, "Question no longer exists.");
+    prompts.splice(index, 1);
   } else if (body.operation === "reorder") {
     if (
       !Array.isArray(body.ids) ||

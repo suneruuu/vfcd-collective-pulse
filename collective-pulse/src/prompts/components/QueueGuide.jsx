@@ -27,6 +27,13 @@ export function QueueGuide() {
         </h2>
         <p>Change the question content.</p>
       </div>
+      <div>
+        <h2>
+          <QueueIcon name="trash" />
+          Trash
+        </h2>
+        <p>Remove a question from the queue.</p>
+      </div>
       <hr />
       <div>
         <h2>

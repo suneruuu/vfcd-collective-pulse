@@ -132,11 +132,12 @@ async function main() {
     create schema auth; create table auth.users(id uuid primary key);
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     grant usage on schema auth to anon, authenticated; grant execute on function auth.uid() to anon, authenticated;`);
-  checked("psql", [
-    ...psqlArgs(),
-    "-f",
-    path.join(__dirname, "../supabase/migrations/202609190001_collective_pulse.sql"),
-  ]);
+  const migrationsDir = path.join(__dirname, "../supabase/migrations");
+  for (const migration of fs
+    .readdirSync(migrationsDir)
+    .filter((name) => name.endsWith(".sql"))
+    .sort())
+    checked("psql", [...psqlArgs(), "-f", path.join(migrationsDir, migration)]);
   assert.deepEqual(json("select prompts from pulse_private.campaign"), Queue.defaults);
   assert.equal(sql("select count(*) from pulse_private.votes"), "0");
   rejected("select * from pulse_private.votes", /permission denied/);
@@ -301,8 +302,105 @@ async function main() {
   assert(Number(sql("select processed_slots from pulse_private.campaign")) >= 574);
   for (const item of catchup.queue.sharedPrompts.visible)
     assert.equal(new Date(item.shownAt + 7 * 3600000).toISOString().slice(0, 10), today);
+  // Reapplying the upgrade must preserve the existing campaign and grants.
+  const beforeUpgrade = json("select to_jsonb(c) from pulse_private.campaign c");
+  const savedVotes = json("select jsonb_agg(to_jsonb(v) order by id) from pulse_private.votes v");
+  checked("psql", [
+    ...psqlArgs(),
+    "-f",
+    path.join(migrationsDir, "202609190002_prompt_deletion.sql"),
+  ]);
+  assert.deepEqual(json("select to_jsonb(c) from pulse_private.campaign c"), beforeUpgrade);
+  assert.equal(json("select to_json(public.pulse_is_admin())", "authenticated", adminId), true);
+  const deniedDelete = JSON.stringify({
+    revision: beforeUpgrade.revision,
+    operation: "delete",
+    id: beforeUpgrade.prompts[0].id,
+  });
+  rejected("select public.pulse_update_queue('" + deniedDelete + "')", /permission denied/);
+  rejected(
+    "select public.pulse_update_queue('" + deniedDelete + "')",
+    /Administrator access/,
+    "authenticated",
+  );
+
+  const testPrompts = [
+    { id: "delete-current", text: "Displayed question", hidden: false },
+    { id: "delete-next", text: "Pending question", hidden: false },
+    { id: "delete-hidden", text: "Hidden question", hidden: true },
+    { id: "delete-last", text: "Last question", hidden: false },
+  ];
+  const shownAt = Number(sql("select floor(extract(epoch from (clock_timestamp())) * 1000)"));
+  sql(
+    "update pulse_private.campaign set prompts = '" +
+      JSON.stringify(testPrompts) +
+      "', visible = '" +
+      JSON.stringify([{ id: "delete-current", shownAt }]) +
+      "', next_id = 'delete-next', processed_slots = days * 287",
+  );
+  let queue = json("select public.pulse_read(0, false)", "anon").queue;
+  assert.equal(queue.installation.currentId, "delete-current");
+  rejected(
+    "select public.pulse_update_queue('" +
+      JSON.stringify({
+        revision: queue.revision - 1,
+        operation: "delete",
+        id: "delete-next",
+      }) +
+      "')",
+    /queue changed/,
+    "authenticated",
+    adminId,
+  );
+  rejected(
+    "select public.pulse_update_queue('" +
+      JSON.stringify({
+        revision: queue.revision,
+        operation: "delete",
+        id: "missing",
+      }) +
+      "')",
+    /no longer exists/,
+    "authenticated",
+    adminId,
+  );
+
+  queue = update({ revision: queue.revision, operation: "delete", id: "delete-next" });
+  assert.equal(queue.prompts.length, 3);
+  assert.equal(
+    queue.installation.nextId,
+    "delete-last",
+    "Skip hidden successors after deleting the next question",
+  );
+  queue = update({ revision: queue.revision, operation: "delete", id: "delete-current" });
+  assert.equal(queue.installation.currentId, null);
+  assert.deepEqual(queue.sharedPrompts.visible, []);
+  assert.deepEqual(json("select visible from pulse_private.campaign"), []);
+  queue = update({ revision: queue.revision, operation: "delete", id: "delete-hidden" });
+  queue = update({ revision: queue.revision, operation: "delete", id: "delete-last" });
+  assert.deepEqual(queue.prompts, []);
+  assert.equal(queue.installation.nextId, null);
+  assert.equal(json("select public.pulse_read(0, false)", "anon").queue.prompts.length, 0);
+  assert.deepEqual(
+    json("select jsonb_agg(to_jsonb(v) order by id) from pulse_private.votes v"),
+    savedVotes,
+    "Deleting questions must not modify any collected votes",
+  );
+  queue = update({
+    revision: queue.revision,
+    operation: "add",
+    position: "next",
+    text: "Restart the queue?",
+  });
+  assert.equal(queue.prompts.length, 1);
+  assert.equal(
+    queue.installation.nextId,
+    queue.prompts[0].id,
+    "Adding after emptying the queue restores rotation",
+  );
+
   console.log(
-    "Database checks passed: access control, server hours, idempotency, shared rotation, queue conflicts, concurrent votes, and pagination.",
+    "Database checks passed: access control, server hours, idempotency, shared rotation, queue conflicts, deletion, upgrades, concurrent votes, and pagination.",
   );
 }
 main()

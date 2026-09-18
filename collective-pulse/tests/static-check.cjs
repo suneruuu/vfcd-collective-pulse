@@ -20,7 +20,9 @@ for (const url of links) {
 }
 const files = fs.readdirSync(path.join(dist, "assets"));
 assert(
-  files.includes("live.svg") && files.includes("prompt-100.svg"),
+  files.includes("live.svg") &&
+    files.includes("prompt-100.svg") &&
+    files.includes("queue-trash.svg"),
   "Original display assets must be deployed",
 );
 const scripts = files.filter((file) => /^index-.*\.js$/.test(file));

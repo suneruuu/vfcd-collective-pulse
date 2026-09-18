@@ -58,7 +58,15 @@ export function createPrompts(runtime, { animationClock, persistence }) {
     });
     runtime.managedPrompts = queue.prompts;
     runtime.PROMPTS = Object.freeze(queue.prompts.map((prompt) => prompt.text));
-    runtime.state.prompts.nextIndex = Math.max(0, nextIds.indexOf(oldNextId));
+    const nextId = nextIds.includes(oldNextId)
+      ? oldNextId
+      : [
+          ...previousIds.slice(runtime.state.prompts.nextIndex),
+          ...previousIds.slice(0, runtime.state.prompts.nextIndex),
+        ].find((id) => nextIds.includes(id));
+    runtime.state.prompts.nextIndex = Math.max(0, nextIds.indexOf(nextId));
+    if (runtime.state.prompts.currentId && !nextIds.includes(runtime.state.prompts.currentId))
+      runtime.state.prompts.currentId = null;
     if (!runtime.state.prompts.currentId) {
       while (
         runtime.state.prompts.nextIndex > 0 &&

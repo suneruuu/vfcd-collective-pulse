@@ -250,6 +250,57 @@ async function main() {
   assert.deepEqual((await get()).prompts, document.prompts, "Queue survives service restart");
   assert.equal((await get()).revision, 6);
   await checkDisplay();
+  const beforeDelete = await get();
+  const deletedId = beforeDelete.prompts[0].id;
+  const deleted = await post("/api/prompts", {
+    revision: beforeDelete.revision,
+    operation: "delete",
+    id: deletedId,
+  });
+  assert.equal(deleted.status, 200);
+  assert.deepEqual(
+    deleted.body.prompts,
+    beforeDelete.prompts.filter((prompt) => prompt.id !== deletedId),
+  );
+  assert.equal(deleted.body.revision, beforeDelete.revision + 1);
+  assert.equal(
+    (
+      await post("/api/prompts", {
+        revision: deleted.body.revision,
+        operation: "delete",
+        id: deletedId,
+      })
+    ).status,
+    404,
+  );
+  assert.equal(
+    (
+      await post("/api/prompts", {
+        revision: beforeDelete.revision,
+        operation: "delete",
+        id: deleted.body.prompts[0].id,
+      })
+    ).status,
+    409,
+  );
+  await close();
+  await start();
+  assert.deepEqual((await get()).prompts, deleted.body.prompts, "Deletion survives restart");
+  let remaining = await get();
+  while (remaining.prompts.length) {
+    const response = await post("/api/prompts", {
+      revision: remaining.revision,
+      operation: "delete",
+      id: remaining.prompts[0].id,
+    });
+    assert.equal(response.status, 200);
+    remaining = response.body;
+  }
+  assert.deepEqual(
+    (await get()).prompts,
+    [],
+    "Deleting the final local question leaves a valid empty queue",
+  );
   await close();
   fs.writeFileSync(dataFile, "invalid JSON");
   assert.throws(
@@ -368,6 +419,44 @@ async function checkDisplay() {
     run("state.prompts.currentId"),
     "before-first",
     "Add to next works before the first display rotation",
+  );
+  run("state.votes = " + JSON.stringify(votes) + ";");
+  const withoutCurrent = {
+    ...beforeFirst,
+    revision: 12,
+    prompts: beforeFirst.prompts.filter((prompt) => prompt.id !== "before-first"),
+  };
+  run("applyPromptQueue(" + JSON.stringify(withoutCurrent) + ");");
+  assert.equal(
+    run("state.prompts.currentId"),
+    null,
+    "Deleting the current question clears its identity",
+  );
+  assert.deepEqual(
+    copy("state.prompts.visible"),
+    [],
+    "The deleted current question disappears from the display",
+  );
+  assert.deepEqual(
+    copy("state.votes"),
+    votes,
+    "Deleting a displayed question preserves collected responses",
+  );
+  const withoutNext = {
+    ...withoutCurrent,
+    revision: 13,
+    prompts: withoutCurrent.prompts.filter((prompt) => prompt.id !== "default-14"),
+  };
+  run("applyPromptQueue(" + JSON.stringify(withoutNext) + ");");
+  assert.equal(
+    run("managedPrompts[nextManagedPromptIndex()].id"),
+    "default-15",
+    "Deleting the pending question continues at its successor",
+  );
+  run(
+    "applyPromptQueue(" +
+      JSON.stringify({ version: 1, revision: 14, prompts: Queue.defaults }) +
+      ");",
   );
   // Legacy numeric history must remap to stable default IDs on first managed load.
   run(
