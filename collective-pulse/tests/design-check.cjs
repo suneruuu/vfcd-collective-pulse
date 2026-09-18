@@ -268,6 +268,10 @@ run(
 );
 events.length = 0;
 run("drawPrompts(getLayout());");
+assert(
+  !events.some((event) => event.type === "fillRect"),
+  "Prompt fading must leave the drop background visible instead of painting over it",
+);
 const rules = events.filter((event) => event.type === "image");
 assert.equal(rules.length, 5);
 assert.deepEqual(

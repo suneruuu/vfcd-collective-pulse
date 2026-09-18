@@ -169,10 +169,10 @@ export function createInstallation({
     p.background(0);
     renderer.drawInformationPanel(layout, timing, now);
     if (!timing.before) {
+      if (timing.active) renderer.drawRipples(layout, now);
       renderer.drawMainHeader(layout);
       renderer.drawDailyGraph(layout, graphTiming, now);
       if (timing.active) {
-        renderer.drawRipples(layout, now);
         renderer.drawPrompts(layout, timing, now);
       }
     }

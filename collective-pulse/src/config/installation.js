@@ -11,7 +11,7 @@ import { INSTALLATION_WEEK } from "./week.js";
 export const CONFIG = Object.freeze({
   // Voting and the calendar share the start date in week.js.
   CAMPAIGN_START_DATE: INSTALLATION_WEEK.START_DATE,
-  CAMPAIGN_TIMEZONE_OFFSET: "+07:00",
+  CAMPAIGN_TIMEZONE_OFFSET: "+00:00",
   CAMPAIGN_DAYS: INSTALLATION_WEEK.DAYS,
   OPEN_HOUR: 9,
   CLOSE_HOUR: 18,

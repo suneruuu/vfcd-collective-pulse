@@ -510,12 +510,13 @@ export function createRenderer(
       (ripple) => nowMillis - ripple.bornAt < CONFIG.VOTE_RIPPLE_MS,
     );
     if (runtime.ripples.length === 0) return;
-    const centerX = layout.mainW * 0.5;
+    // The reference anchors the drop below the lower-left part of the display.
+    const centerX = 300 * layout.sx;
     const centerY = 1156 * layout.sy;
     const ctx = p.drawingContext;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(0, 855 * layout.sy, layout.mainW, p.height - 855 * layout.sy);
+    ctx.rect(0, 0, layout.mainW, p.height);
     ctx.clip();
     for (const ripple of runtime.ripples) {
       const age = nowMillis - ripple.bornAt;
@@ -551,6 +552,9 @@ export function createRenderer(
       const alpha = alphaLevels[rowSlot];
       const enterOffset = isNewest ? (1 - easeOutCubic(newestAnimation)) * 18 * ui : 0;
       const y = promptLayout.rows[rowSlot] + enterOffset;
+      // Fade only the row content, preserving the drop glow underneath.
+      p.push();
+      p.drawingContext.globalAlpha = clamp((y - 855 * layout.sy) / (59 * layout.sy), 0, 1);
       p.fill(255, isNewest ? 153 : alpha);
       p.textAlign(p.LEFT, p.CENTER);
       p.textSize(16 * ui);
@@ -569,19 +573,9 @@ export function createRenderer(
       p.textSize(fittedTextSize(question, promptLayout.w, 24 * ui, 14 * ui));
       p.textAlign(p.LEFT, p.CENTER);
       p.text(question, promptLayout.questionX, y);
+      p.pop();
     }
 
-    // The reference fades the oldest row into the black area above the feed.
-    const ctx = p.drawingContext;
-    const fadeTop = 855 * layout.sy;
-    const fadeHeight = 59 * layout.sy;
-    const gradient = ctx.createLinearGradient(0, fadeTop, 0, fadeTop + fadeHeight);
-    gradient.addColorStop(0, "#000");
-    gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
-    ctx.save();
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, fadeTop, layout.mainW, fadeHeight);
-    ctx.restore();
     p.textAlign(p.LEFT, p.TOP);
     p.textStyle(p.NORMAL);
   }
