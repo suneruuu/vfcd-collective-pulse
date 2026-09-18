@@ -801,9 +801,25 @@ for (const [w, h] of [
       .filter((event) => event.type === "rect" && event.args[0] < 1465 * sx)
       .slice(1);
     assert(dailyBars.length > 0);
+    const currentDay = run("derived.days[" + day + "]");
+    const graph = run("getLayout().graph");
+    const baseline = graph.y + graph.h * 0.5;
+    const scale = run(
+      "graphVerticalScale(getLayout(), derived.days[" + day + "], " + baseline + ")",
+    );
+    const expectedHeight = Math.max(3 * ui, 5 * (day + 1) * scale);
     assert(
-      dailyBars.every((event) => Math.abs(event.args[3] - 17 * ui * (day + 1)) < 1e-8),
-      "the main graph must not include another day's bars",
+      dailyBars.every((event) => Math.abs(event.args[3] - expectedHeight) < 1e-8),
+      "the main graph must show only this day's bars at the cumulative balance scale",
+    );
+    assert.equal(
+      currentDay.startValue,
+      day === 0 ? 0 : run("derived.days[" + (day - 1) + "].finalValue"),
+    );
+    assert.equal(
+      events.find((event) => event.type === "text" && event.value === "0").args[1],
+      542 * sy,
+      "every selected day must use the same zero reference",
     );
     assert(
       !events.some((event) => event.source === "assets/live-cursor.svg"),

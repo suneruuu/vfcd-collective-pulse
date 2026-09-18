@@ -30,7 +30,12 @@ export function createVoting(runtime, { campaign }) {
       if (runningNo > runningYes) lastLeader = NO;
     }
     runtime.state.lastLeader = lastLeader || runtime.state.lastLeader || 0;
-    const dayData = days.map((votes, dayIndex) => buildDayData(votes, dayIndex));
+    let previousDay = null;
+    const dayData = days.map((votes, dayIndex) => {
+      const day = buildDayData(votes, dayIndex, previousDay);
+      previousDay = day;
+      return day;
+    });
     runtime.derived = {
       yes,
       no,
@@ -39,7 +44,10 @@ export function createVoting(runtime, { campaign }) {
       overview: buildOverviewData(dayData),
     };
   }
-  function buildDayData(votes, dayIndex) {
+  function buildDayData(votes, dayIndex, previousDay = null) {
+    const startValue = previousDay?.finalValue ?? 0;
+    const startChoice = previousDay?.finalChoice ?? 0;
+    const startVoteStartValue = previousDay?.finalVoteStartValue ?? startValue;
     const dayStart = runtime.campaignStartMs + dayIndex * CONFIG.DAY_MS;
     const groups = [];
     let currentGroup = null;
@@ -69,9 +77,12 @@ export function createVoting(runtime, { campaign }) {
         no++;
       }
     }
-    let value = 0;
-    let minValue = 0;
-    let maxValue = 0;
+    let value = startValue;
+    let lastChoice = startChoice;
+    let lastVoteStartValue = startVoteStartValue;
+    // Retain earlier extrema so opening a new day preserves the vertical scale.
+    let minValue = previousDay?.minValue ?? startValue;
+    let maxValue = previousDay?.maxValue ?? startValue;
     for (const group of groups) {
       group.startValue = value;
       group.bars = [
@@ -85,6 +96,8 @@ export function createVoting(runtime, { campaign }) {
         },
       ].filter((bar) => bar.count > 0);
       for (const bar of group.bars) {
+        lastVoteStartValue = value;
+        lastChoice = bar.choice;
         value += bar.choice * bar.count * CONFIG.STEP_Y;
         minValue = Math.min(minValue, value);
         maxValue = Math.max(maxValue, value);
@@ -99,7 +112,12 @@ export function createVoting(runtime, { campaign }) {
       yes,
       no,
       total: votes.length,
+      startValue,
+      startChoice,
+      startVoteStartValue,
       finalValue: value,
+      finalChoice: lastChoice,
+      finalVoteStartValue: lastVoteStartValue,
       minValue,
       maxValue,
     };

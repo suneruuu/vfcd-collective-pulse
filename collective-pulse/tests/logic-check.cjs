@@ -307,7 +307,7 @@ const checks = `
   assert(derived.days[1].total === 0 && derived.total === 1, "an overnight hold must not create votes on the next day");
   assert(queueDirection(NO, secondOpen + 1100), "a new press must be accepted after reopening");
   updateInputSampling(secondOpen + 2000);
-  assert(derived.days[1].finalValue === -5 && derived.total === 2, "the next day's new press must belong to that day only");
+  assert(derived.days[1].startValue === 5 && derived.days[1].finalValue === 0 && derived.days[1].no === 1 && derived.total === 2, "the next day must continue yesterday's balance while counting its new press on that day only");
   resetInputSampling(secondOpen + 2000);
 
   // A suspended frame can catch up only valid samples and must clear the hold
@@ -404,6 +404,53 @@ const checks = `
   drawVoteTrace(layout, { liveSecond: 20 }, gapHistory, 20, baseline, 1);
   const earlierPending = drawingEvents.find((event) => event.type === "rect" && event.args[0] === layout.graph.x + 11 * CONFIG.SECOND_WIDTH);
   assert(earlierPending.args[1] === baseline - 15 && earlierPending.args[3] === 15, "an intermediate pending gap must inherit the previous three-vote YES bar's bounds");
+
+  // Daily windows share one cumulative zero, including idle days and reloads.
+  for (const choice of [YES, NO]) {
+    state = createEmptyState();
+    const opening = campaignStartMs + CONFIG.OPEN_HOUR * 3600000;
+    state.votes = [
+      [opening, choice], [opening + 1, choice], [opening + 2, choice],
+      [opening + 1000, -choice],
+      [opening + 2 * CONFIG.DAY_MS + 1000, -choice],
+    ];
+    rebuildDerived();
+    const ending = 2 * choice * CONFIG.STEP_Y;
+    assert(derived.days[0].startValue === 0 && derived.days[0].finalValue === ending, "only the first day begins at campaign zero");
+    assert(derived.days[1].total === 0 && derived.days[1].startValue === ending && derived.days[1].finalValue === ending, "an empty day must retain the previous day's balance without adding votes");
+    assert(derived.days[2].groups[0].startValue === ending && derived.days[2].finalValue === choice * CONFIG.STEP_Y, "the next vote must advance from the inherited positive or negative balance");
+    assert(derived.days[6].startValue === choice * CONFIG.STEP_Y, "the balance must carry through every remaining empty day");
+
+    viewStartSecond = CONFIG.OPEN_HOUR * 3600;
+    timelineSecondWidth = CONFIG.SECOND_WIDTH;
+    const scale = graphVerticalScale(layout, derived.days[1], baseline);
+    drawingEvents.length = 0;
+    drawVoteTrace(layout, { liveSecond: viewStartSecond + 1 }, derived.days[1], viewStartSecond + 1, baseline, scale);
+    const carriedBand = drawingEvents.find((event) => event.type === "rect");
+    const expectedBand = voteBandBounds(derived.days[0].finalVoteStartValue, ending, baseline, scale, layout.ui);
+    assert(carriedBand.args[1] === expectedBand.y && carriedBand.args[3] === expectedBand.h, "the overnight idle band must retain the previous vote's exact bounds");
+    assert(drawingEvents.find((event) => event.type === "circle").args[1] === baseline - ending * scale, "a new empty day's live point must remain at yesterday's endpoint");
+    drawingEvents.length = 0;
+    drawGraphSecondStems(layout, { liveSecond: viewStartSecond + 2 }, derived.days[2], viewStartSecond + 2, baseline, scale);
+    assert(drawingEvents[0].args[1] === baseline - ending * scale, "stems before the new day's first vote must start at the inherited balance");
+    drawingEvents.length = 0;
+    drawVoteTrace(layout, { liveSecond: viewStartSecond + 2 }, derived.days[2], viewStartSecond + 2, baseline, scale);
+    const nextBar = drawingEvents.find((event) => event.type === "rect" && event.args[0] === layout.graph.x + CONFIG.SECOND_WIDTH);
+    const expectedNextBar = voteBandBounds(ending, choice * CONFIG.STEP_Y, baseline, scale, layout.ui);
+    assert(nextBar.args[1] === expectedNextBar.y && nextBar.args[3] === expectedNextBar.h, "the first new-day bar must render from yesterday's balance");
+
+    saveState();
+    state = loadState();
+    rebuildDerived();
+    assert(derived.days[1].startValue === ending && derived.days[2].finalValue === choice * CONFIG.STEP_Y, "reloading saved votes must reconstruct the same balance across days");
+  }
+  const compressedPreviousDay = buildDayData([
+    ...Array.from({ length: 100 }, (_, i) => [graphBase + i, YES]),
+    ...Array.from({ length: 98 }, (_, i) => [graphBase + 1000 + i, NO]),
+  ], 0);
+  const compressedNewDay = buildDayData([], 1, compressedPreviousDay);
+  assert(compressedNewDay.startValue === 10 && graphVerticalScale(layout, compressedNewDay, baseline) === graphVerticalScale(layout, compressedPreviousDay, baseline), "a new day must retain the previous vertical scale even when the ending balance is smaller than earlier peaks");
+  viewStartSecond = 0;
 
   assert(!getCampaignTiming(campaignStartMs - 1).active, "pre-campaign voting must be closed");
   assert(!getCampaignTiming(campaignStartMs).active, "midnight must not open voting");

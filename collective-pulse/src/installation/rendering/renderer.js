@@ -292,7 +292,8 @@ export function createRenderer(
     const first = Math.max(0, Math.ceil(runtime.viewStartSecond / tickStep) * tickStep);
     const last = Math.min(Math.ceil(viewEnd), Math.floor(timing.liveSecond));
     let groupIndex = viewport.lowerBoundGroup(dayData.groups, first);
-    let value = groupIndex > 0 ? dayData.groups[groupIndex - 1].endValue : 0;
+    let value =
+      groupIndex > 0 ? dayData.groups[groupIndex - 1].endValue : (dayData.startValue ?? 0);
     const ctx = p.drawingContext;
     ctx.save();
     ctx.setLineDash([5 * layout.ui, 6 * layout.ui]);
@@ -313,13 +314,14 @@ export function createRenderer(
     const graph = layout.graph;
     const groups = dayData.groups;
     const firstIndex = viewport.lowerBoundGroup(groups, Math.floor(runtime.viewStartSecond));
-    let value = firstIndex > 0 ? groups[firstIndex - 1].endValue : 0;
-    let lastChoice = firstIndex > 0 ? groups[firstIndex - 1].lastChoiceAfter : 0;
+    let value = firstIndex > 0 ? groups[firstIndex - 1].endValue : (dayData.startValue ?? 0);
+    let lastChoice =
+      firstIndex > 0 ? groups[firstIndex - 1].lastChoiceAfter : (dayData.startChoice ?? 0);
     const previousBars = firstIndex > 0 ? groups[firstIndex - 1].bars : [];
     const previousBar = previousBars[previousBars.length - 1];
     let lastVoteStartValue = previousBar
       ? value - previousBar.choice * previousBar.count * CONFIG.STEP_Y
-      : value;
+      : (dayData.startVoteStartValue ?? value);
     let cursorSecond = runtime.viewStartSecond;
     for (let i = firstIndex; i < groups.length; i++) {
       const group = groups[i];

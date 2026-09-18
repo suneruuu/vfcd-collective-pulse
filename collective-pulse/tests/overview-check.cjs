@@ -156,12 +156,12 @@ almostEqual(
   baseline - 10 * run("overviewVerticalScale(getLayout(), derived.overview)"),
 );
 
-// Weekly history carries across midnight, while the main graph remains daily.
+// Both graphs carry the balance across midnight; main graph windows remain daily.
 run(
   "state.votes = [[campaignStartMs + 43200000, YES], [campaignStartMs + CONFIG.DAY_MS + 43200000, NO], [campaignStartMs + 2 * CONFIG.DAY_MS + 36000000, YES]]; rebuildDerived();",
 );
 assert.deepEqual(copy(run("derived.overview.points.map(point => point.value)")), [5, 0, 5]);
-assert.deepEqual(copy(run("derived.days.slice(0, 3).map(day => day.finalValue)")), [5, -5, 5]);
+assert.deepEqual(copy(run("derived.days.slice(0, 3).map(day => day.finalValue)")), [5, 0, 5]);
 assert.equal(run("derived.overview.finalValue"), 5);
 
 // Dense history retains sharp peaks/troughs, exact totals, ordering, and endpoint.
