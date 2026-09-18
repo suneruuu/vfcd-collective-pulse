@@ -43,8 +43,12 @@ export function useInstallation(host) {
             });
             sync.start();
             listen(window, "online", sync.syncOnce);
-            listen(window, "blur", () => engine.input.resetInputSampling());
-            listen(document, "visibilitychange", () => engine.input.resetInputSampling());
+            const resetInteraction = () => {
+              engine.input.resetInputSampling();
+              engine.actions.setNavigationHelperHovered(false);
+            };
+            listen(window, "blur", resetInteraction);
+            listen(document, "visibilitychange", resetInteraction);
             listen(window, "beforeunload", engine.persistence.saveState);
           };
           p.draw = engine.draw;

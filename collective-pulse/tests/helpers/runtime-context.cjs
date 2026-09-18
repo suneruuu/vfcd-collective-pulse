@@ -35,14 +35,19 @@ function applySnapshot(context, snapshot) {
   );
   attr("view-controls", "data-waiting", !snapshot.active && !snapshot.pulsePreview);
   attr("view-controls", "data-phase", snapshot.phase);
+  attr("view-controls", "data-helper-visible", snapshot.navigationHelperVisible);
   attr("festival-schedule", "data-phase", snapshot.phase);
   attr("view-live", "aria-pressed", snapshot.followLive);
   attr("view-fit", "aria-pressed", snapshot.fitAll);
-  attr("panel-toggle", "aria-expanded", snapshot.informationPanelVisible);
+  attr("navigation-helper", "data-visible", snapshot.navigationHelperVisible);
+  attr("navigation-helper", "aria-hidden", !snapshot.navigationHelperVisible);
+  if (node("navigation-helper"))
+    node("navigation-helper").inert = !snapshot.navigationHelperVisible;
+  attr("panel-toggle", "aria-expanded", snapshot.navigationHelperVisible);
   attr(
     "panel-toggle",
     "aria-label",
-    snapshot.informationPanelVisible ? "Hide information panel" : "Show information panel",
+    snapshot.navigationHelperVisible ? "Hide navigation helper" : "Show navigation helper",
   );
   if (node("overview-days"))
     node("overview-days").hidden = !snapshot.informationPanelVisible || snapshot.before;
@@ -55,7 +60,7 @@ function applySnapshot(context, snapshot) {
   if (node("festival-schedule"))
     node("festival-schedule").hidden = !snapshot.informationPanelVisible;
   if (snapshot.informationPanelVisible) {
-    const day = schedule.festivalDayAt(snapshot.now);
+    const day = schedule.festivalDayAt(snapshot.now, snapshot.selectedOverviewDay);
     text("schedule-weekday", day.weekday);
     text(
       "schedule-date",
@@ -67,12 +72,17 @@ function applySnapshot(context, snapshot) {
       }).format(new Date(day.date + "T00:00:00+07:00")),
     );
     const date = schedule.vietnamScheduleDate(snapshot.now);
+    attr("festival-schedule", "data-today", date === day.date);
     text(
       "schedule-status",
       date < day.date ? "Upcoming" : date > day.date ? "Festival ended" : "Today",
     );
     if (node("schedule-events"))
-      node("schedule-events").innerHTML = fixtures.scheduleMarkup(snapshot.now);
+      node("schedule-events").innerHTML = fixtures.scheduleMarkup(
+        snapshot.now,
+        true,
+        snapshot.selectedOverviewDay,
+      );
   }
 }
 exports.installContext = (context) => {
@@ -114,7 +124,7 @@ exports.installContext = (context) => {
       "view-zoom-out": "zoomOut",
       "view-live": "live",
       "view-fit": "fit",
-      "panel-toggle": "togglePanel",
+      "panel-toggle": "toggleNavigationHelper",
       "view-pulse": "togglePreview",
     };
     for (const [id, action] of Object.entries(handlers))

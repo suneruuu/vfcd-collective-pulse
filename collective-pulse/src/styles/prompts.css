@@ -64,9 +64,9 @@
 }
 .question-row {
   display: grid;
-  grid-template-columns: calc(61 * var(--sx)) calc(242 * var(--sx)) calc(63 * var(--sx)) calc(
-      89 * var(--sx)
-    ) 1fr auto;
+  grid-template-columns:
+    calc(61 * var(--sx)) calc(242 * var(--sx)) calc(63 * var(--sx)) calc(89 * var(--sx))
+    1fr auto;
   align-items: center;
   min-height: max(48px, calc(60 * var(--sy)));
   font-size: clamp(16px, calc(24 * var(--ui)), 24px);
@@ -260,7 +260,7 @@
 .queue-guide {
   position: absolute;
   left: calc(1465 * var(--sx));
-  top: calc(409 * var(--sy));
+  top: calc(430 * var(--sy));
   bottom: 0;
   width: calc(455 * var(--sx));
   overflow-y: auto;
@@ -462,7 +462,7 @@
     position: relative;
     left: 0;
     width: 100%;
-    height: 330px;
+    height: 344px;
     --sx: calc(100vw / 455);
     --sy: 0.8px;
     --ui: 1px;

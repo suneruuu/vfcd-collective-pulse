@@ -11,70 +11,86 @@ export function InstallationControls({ snapshot, invoke }) {
         }}
         data-waiting={String(!snapshot.active && !snapshot.pulsePreview)}
         data-phase={snapshot.phase}
+        data-helper-visible={String(snapshot.navigationHelperVisible)}
+        onMouseEnter={() => invoke("setNavigationHelperHovered", true)}
+        onMouseLeave={() => invoke("setNavigationHelperHovered", false)}
+        onPointerDownCapture={() => invoke("interactNavigationHelper")}
+        onPointerMoveCapture={() => invoke("interactNavigationHelper")}
+        onClickCapture={() => invoke("interactNavigationHelper")}
+        onWheelCapture={() => invoke("interactNavigationHelper")}
+        onKeyDownCapture={() => invoke("interactNavigationHelper")}
       >
-        <button
-          id="view-zoom-in"
-          className="zoom-button"
-          type="button"
-          aria-label="Zoom in"
-          onClick={() => invoke("zoomIn")}
+        <div
+          id="navigation-helper"
+          data-visible={String(snapshot.navigationHelperVisible)}
+          aria-hidden={!snapshot.navigationHelperVisible}
+          inert={!snapshot.navigationHelperVisible}
         >
-          <Icon name="zoom-plus-horizontal" className="plus-vertical" width="16" height="2" />
-          <Icon name="zoom-plus-horizontal" className="plus-horizontal" width="16" height="2" />
-        </button>
-        <button
-          id="view-zoom-out"
-          className="zoom-button"
-          type="button"
-          aria-label="Zoom out"
-          onClick={() => invoke("zoomOut")}
-        >
-          <Icon name="zoom-minus" className="minus-horizontal" width="17" height="2" />
-        </button>
-        <button
-          id="view-live"
-          className="mode-button"
-          type="button"
-          aria-pressed={snapshot.followLive}
-          onClick={() => invoke("live")}
-        >
-          <Icon name="live" width="20" height="20" />
-          <span>LIVE</span>
-        </button>
-        <button
-          id="view-fit"
-          className="mode-button"
-          type="button"
-          aria-label="Fit all elapsed time"
-          aria-pressed={snapshot.fitAll}
-          onClick={() => invoke("fit")}
-        >
-          <Icon name="fit" width="20" height="20" />
-          <span>FIT</span>
-        </button>
+          <button
+            id="view-zoom-in"
+            className="zoom-button"
+            type="button"
+            aria-label="Zoom in"
+            onClick={() => invoke("zoomIn")}
+          >
+            <Icon name="zoom-plus-horizontal" className="plus-vertical" width="16" height="2" />
+            <Icon name="zoom-plus-horizontal" className="plus-horizontal" width="16" height="2" />
+          </button>
+          <button
+            id="view-zoom-out"
+            className="zoom-button"
+            type="button"
+            aria-label="Zoom out"
+            onClick={() => invoke("zoomOut")}
+          >
+            <Icon name="zoom-minus" className="minus-horizontal" width="17" height="2" />
+          </button>
+          <button
+            id="view-live"
+            className="mode-button"
+            type="button"
+            aria-pressed={snapshot.followLive}
+            onClick={() => invoke("live")}
+          >
+            <Icon name="live" width="20" height="20" />
+            <span>LIVE</span>
+          </button>
+          <button
+            id="view-fit"
+            className="mode-button"
+            type="button"
+            aria-label="Fit all elapsed time"
+            aria-pressed={snapshot.fitAll}
+            onClick={() => invoke("fit")}
+          >
+            <Icon name="fit" width="20" height="20" />
+            <span>FIT</span>
+          </button>
+          <p className="scroll-hint">
+            <Icon name="scroll" width="24" height="24" />
+            <span>
+              <strong>SCROLL</strong> to zoom in/out
+            </span>
+          </p>
+        </div>
         <button
           id="panel-toggle"
           type="button"
           aria-label={
-            snapshot.informationPanelVisible ? "Hide information panel" : "Show information panel"
+            snapshot.navigationHelperVisible ? "Hide navigation helper" : "Show navigation helper"
           }
-          aria-expanded={snapshot.informationPanelVisible}
-          onClick={() => invoke("togglePanel")}
+          aria-controls="navigation-helper"
+          aria-expanded={snapshot.navigationHelperVisible}
+          onClick={() => invoke("toggleNavigationHelper")}
         >
           <Icon name="panel-toggle" width="21" height="33" />
           <Icon name="waiting-panel-toggle" className="waiting-toggle" width="21" height="33" />
           <Icon name="waiting-panel-toggle" className="daily-toggle" width="21" height="33" />
         </button>
-        <p className="scroll-hint">
-          <Icon name="scroll" width="24" height="24" />
-          <span>
-            <strong>SCROLL</strong> to zoom in/out
-          </span>
-        </p>
       </nav>
       <nav
         id="overview-days"
-        aria-label="Select a day's graph from the weekly overview"
+        aria-label="Select a day's graph and schedule from the weekly overview"
         hidden={!snapshot.informationPanelVisible || snapshot.before}
       >
         {Array.from(
@@ -86,7 +102,7 @@ export function InstallationControls({ snapshot, invoke }) {
               key={day}
               id={"overview-day-" + day}
               type="button"
-              aria-label={snapshot.dayLabels?.[day] || "View D" + (day + 1) + " graph"}
+              aria-label={snapshot.dayLabels?.[day] || "View D" + (day + 1) + " graph and schedule"}
               title={snapshot.dayLabels?.[day]}
               aria-pressed={snapshot.selectedOverviewDay === day}
               onClick={() => invoke("selectDay", day)}

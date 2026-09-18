@@ -1,35 +1,39 @@
 import { ScheduleCard } from "./ScheduleCard.jsx";
-export function ScheduleAgenda({ agenda }) {
-  const endClock =
-    String(Math.floor(agenda.endMinute / 60)).padStart(2, "0") +
-    ":" +
-    String(agenda.endMinute % 60).padStart(2, "0");
+
+export function ScheduleAgenda({ timeline }) {
   return (
-    <div id="schedule-events">
-      {agenda.rows.map((row) => (
-        <div
-          key={row.start}
-          className="schedule-row"
-          style={{
-            "--row-height": row.height,
-          }}
+    <div id="schedule-events" style={{ "--timeline-height": timeline.height }}>
+      <section className="schedule-lane schedule-lane-nina" aria-label="NINA Next Space events">
+        <h2 className="schedule-venue schedule-venue-nina" style={{ "--venue-y": 52 }}>
+          NINA Next Space
+        </h2>
+        {timeline.nina.map((event) => (
+          <ScheduleCard key={event.sessionKey} event={event} />
+        ))}
+      </section>
+      <img
+        className="schedule-venue-rule"
+        src="/assets/schedule-venue-rule.svg"
+        width="435"
+        height="2"
+        alt=""
+        aria-hidden="true"
+        style={{ "--venue-rule-y": timeline.ninaHeight }}
+      />
+      <section
+        className="schedule-lane schedule-lane-satellite"
+        aria-label="Satellite venue events"
+      >
+        <h2
+          className="schedule-venue schedule-venue-satellite"
+          style={{ "--venue-y": timeline.ninaHeight + 14 }}
         >
-          <time className="schedule-time">{row.start}</time>
-          <div className="schedule-lane">
-            {row.nina.map((event, index) => (
-              <ScheduleCard key={event.id + "-" + index} event={event} />
-            ))}
-          </div>
-          <div className="schedule-lane">
-            {row.satellite.map((event, index) => (
-              <ScheduleCard key={event.id + "-" + index} event={event} />
-            ))}
-          </div>
-        </div>
-      ))}
-      <div className="schedule-end">
-        <time className="schedule-time">{endClock}</time>
-      </div>
+          Satellite Venue
+        </h2>
+        {timeline.satellite.map((event) => (
+          <ScheduleCard key={event.sessionKey} event={event} />
+        ))}
+      </section>
     </div>
   );
 }

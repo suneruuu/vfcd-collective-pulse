@@ -11,7 +11,7 @@ import { INSTALLATION_WEEK } from "./week.js";
 export const CONFIG = Object.freeze({
   // Voting and the calendar share the start date in week.js.
   CAMPAIGN_START_DATE: INSTALLATION_WEEK.START_DATE,
-  CAMPAIGN_TIMEZONE_OFFSET: "+07:00",
+  CAMPAIGN_TIMEZONE_OFFSET: "+00:00",
   CAMPAIGN_DAYS: INSTALLATION_WEEK.DAYS,
   OPEN_HOUR: 9,
   CLOSE_HOUR: 18,
@@ -33,6 +33,7 @@ export const CONFIG = Object.freeze({
   SECOND_WIDTH: 28,
   MAX_SECOND_WIDTH: 224,
   ZOOM_FACTOR: 1.5,
+  NAVIGATION_HELPER_IDLE_MS: 60 * 1000,
   // Legacy storage versions are removed. Date-keyed v4 sessions are kept
   // across reloads and when switching between testing and the event week.
   STORAGE_KEY: "collective_pulse_v4",

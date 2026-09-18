@@ -6,6 +6,7 @@ import { SchedulePanel } from "../schedule/SchedulePanel.jsx";
 export const INITIAL_SNAPSHOT = {
   now: Date.now(),
   informationPanelVisible: true,
+  navigationHelperVisible: true,
   before: false,
   active: false,
   phase: "before-event",
@@ -23,6 +24,7 @@ export function InstallationShell({ snapshot = INITIAL_SNAPSHOT, invoke = () => 
         now={snapshot.now}
         visible={snapshot.informationPanelVisible}
         phase={snapshot.phase}
+        selectedDayIndex={snapshot.selectedOverviewDay}
       />
       <InstallationControls snapshot={snapshot} invoke={invoke} />
       <p id="vote-status" className="sr-only" aria-live="polite">

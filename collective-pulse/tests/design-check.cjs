@@ -268,6 +268,10 @@ run(
 );
 events.length = 0;
 run("drawPrompts(getLayout());");
+assert(
+  !events.some((event) => event.type === "fillRect"),
+  "Prompt fading must leave the drop background visible instead of painting over it",
+);
 const rules = events.filter((event) => event.type === "image");
 assert.equal(rules.length, 5);
 assert.deepEqual(
@@ -306,8 +310,10 @@ const assetSizes = {
   "prompt-50.svg": [60, 2],
   "prompt-60.svg": [60, 2],
   "prompt-100.svg": [60, 2],
-  "schedule-column-rule.svg": [251, 2],
-  "schedule-now.svg": [383.333, 10.6667],
+  "schedule-live.svg": [20, 20],
+  "schedule-timeline-grid.svg": [388, 333],
+  "schedule-timeline-now.svg": [362.333, 10.6667],
+  "schedule-venue-rule.svg": [435, 2],
 };
 for (const [file, expected] of Object.entries(assetSizes)) {
   const svg = fs.readFileSync(path.join(project, "public/assets", file), "utf8");
@@ -352,13 +358,34 @@ context.mouseY = 400;
 assert.equal(run("mouseWheel({ deltaY: -100 })"), false);
 assert.equal(run("zoomSecondWidth"), previousZoom * run("CONFIG.ZOOM_FACTOR"));
 nodes["panel-toggle"].handlers.click();
-assert.equal(run("getLayout().graph.w"), 1826);
+assert.equal(run("getLayout().graph.w"), 1371);
+events.length = 0;
 run("draw();");
-assert.equal(nodes["festival-schedule"].hidden, true);
+assert.equal(nodes["navigation-helper"].attributes["data-visible"], "false");
+assert.equal(nodes["navigation-helper"].inert, true);
+assert.equal(nodes["panel-toggle"].attributes["aria-expanded"], "false");
+assert.equal(nodes["panel-toggle"].attributes["aria-label"], "Show navigation helper");
+assert.equal(nodes["festival-schedule"].hidden, false);
+assert.equal(nodes["overview-days"].hidden, false);
+assert(events.some((event) => event.value === "COLLECTIVE PULSE"));
+assert(events.some((event) => event.value === "OVERVIEW"));
+const collapsedZoom = run("zoomSecondWidth");
+context.mouseX = 1210;
+context.mouseY = 40;
+assert.equal(run("mousePressed()"), true);
+assert.equal(run("zoomSecondWidth"), collapsedZoom, "Hidden zoom controls must not respond");
 nodes["panel-toggle"].handlers.click();
 assert.equal(run("getLayout().graph.w"), 1371);
 run("draw();");
+assert.equal(nodes["navigation-helper"].attributes["data-visible"], "true");
+assert.equal(nodes["navigation-helper"].inert, false);
+assert.equal(nodes["panel-toggle"].attributes["aria-expanded"], "true");
+assert.equal(nodes["panel-toggle"].attributes["aria-label"], "Hide navigation helper");
 assert.equal(nodes["festival-schedule"].hidden, false);
+assert.equal(run("mousePressed()"), false);
+assert.equal(run("zoomSecondWidth"), collapsedZoom * run("CONFIG.ZOOM_FACTOR"));
+context.mouseX = 300;
+context.mouseY = 400;
 
 context.width = 960;
 context.height = 540;
@@ -385,7 +412,9 @@ run("draw();");
 assert.equal(nodes["schedule-weekday"].textContent, "Wednesday");
 assert.equal(nodes["schedule-date"].textContent, "16 September 2026");
 assert.equal(nodes["schedule-status"].textContent, "Today");
-assert(nodes["schedule-events"].innerHTML.includes("VNx Panel | Learning Beyond Classroom"));
+assert(!nodes["schedule-events"].innerHTML.includes("VNx Panel | Learning Beyond Classroom"));
+assert(nodes["schedule-events"].innerHTML.includes("Short Film Session"));
+assert(!nodes["schedule-events"].innerHTML.includes("Cholon Urban Walk"));
 assert.equal(run("getCampaignTiming(Date.now()).displayDayIndex"), 2);
 
 // Explicit CSS geometry for all three timed Figma screens, not browser QA.
@@ -474,7 +503,7 @@ for (const [w, h] of [
   const waitingImages = events.filter((event) => event.type === "image");
   assert.equal(waitingImages.length, 1);
   assert.equal(waitingImages[0].source, "assets/panel-rule.svg");
-  assert.deepEqual(waitingImages[0].args, [1498 * sx, 667 * sy, 389 * sx, sy]);
+  assert.deepEqual(waitingImages[0].args, [1498 * sx, 676 * sy, 389 * sx, sy]);
   assert.equal(
     run("queueDirection(YES, Date.now())"),
     false,
@@ -622,13 +651,18 @@ assert.equal(
   "hidden graph navigation must not respond under the blur",
 );
 
+run("navigationHelperVisible = true; navigationHelperLastInteractionAt = Date.now();");
 nodes["panel-toggle"].handlers.click();
 run("draw();");
-assert.equal(nodes["festival-schedule"].hidden, true);
-assert.equal(nodes["campaign-screen"].style.values["--main-width"], "1920px");
-assert.equal(cssNumber("#campaign-screen", "width", 1920, 1080, 1920), 1920);
+assert.equal(nodes["navigation-helper"].attributes["data-visible"], "false");
+assert.equal(nodes["navigation-helper"].inert, true);
+assert.equal(nodes["festival-schedule"].hidden, false);
+assert.equal(nodes["campaign-screen"].style.values["--main-width"], "1465px");
+assert.equal(cssNumber("#campaign-screen", "width", 1920, 1080, 1465), 1465);
 nodes["panel-toggle"].handlers.click();
 run("draw();");
+assert.equal(nodes["navigation-helper"].attributes["data-visible"], "true");
+assert.equal(nodes["navigation-helper"].inert, false);
 assert.equal(nodes["festival-schedule"].hidden, false);
 
 testNow = new Date("2026-09-17T02:00:00+07:00").getTime();
@@ -729,6 +763,11 @@ for (const [w, h] of [
     events.length = 0;
     run("draw();");
     assert.equal(run("selectedOverviewDay"), day);
+    assert.equal(
+      nodes["schedule-weekday"].textContent,
+      ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][day],
+    );
+    assert.equal(nodes["schedule-date"].textContent, `${14 + day} September 2026`);
     assert.equal(run("viewedDayIndex"), day);
     assert.equal(run("getGraphTiming(getCampaignTiming(Date.now())).displayDayIndex"), day);
     assert.equal(run("getGraphTiming(getCampaignTiming(Date.now())).active"), false);
@@ -756,7 +795,7 @@ for (const [w, h] of [
     }
     assert.equal(
       nodes[`overview-day-${day}`].attributes["aria-label"],
-      `View D${day + 1}, ${String(14 + day).padStart(2, "0")}/09/2026 graph`,
+      `View D${day + 1}, ${String(14 + day).padStart(2, "0")}/09/2026 graph and schedule`,
     );
     const dailyBars = events
       .filter((event) => event.type === "rect" && event.args[0] < 1465 * sx)
@@ -812,17 +851,26 @@ for (const invalid of [-1, 7, 1.5, "NaN"]) {
   assert.equal(run(`selectOverviewDay(${invalid})`), false);
   assert.equal(run("selectedOverviewDay"), 2);
 }
+run("navigationHelperVisible = true; navigationHelperLastInteractionAt = Date.now();");
 nodes["panel-toggle"].handlers.click();
 run("draw();");
-assert.equal(nodes["overview-days"].hidden, true);
-assert.equal(run("overviewDayAtPoint(getLayout(), 1500, 900)"), null);
-assert.equal(run("selectOverviewDay(0)"), false);
+assert.equal(nodes["navigation-helper"].attributes["data-visible"], "false");
+assert.equal(nodes["navigation-helper"].inert, true);
+assert.equal(nodes["overview-days"].hidden, false);
+assert.equal(
+  run("overviewDayAtPoint(getLayout(), getLayout().overview.x + 1, 900 * getLayout().sy)"),
+  0,
+);
+assert.equal(run("selectedOverviewDay"), 2);
+assert.equal(run("selectOverviewDay(2)"), true);
 nodes["panel-toggle"].handlers.click();
 run("draw();");
+assert.equal(nodes["navigation-helper"].attributes["data-visible"], "true");
+assert.equal(nodes["navigation-helper"].inert, false);
 assert.equal(nodes["overview-days"].hidden, false);
 
-// Reading Monday/Tuesday during Wednesday's opening hours cannot redirect
-// responses or the schedule, and a fresh future day must show an empty graph.
+// The calendar follows the selected day while responses still belong to today.
+// A fresh future day must show its calendar and an empty graph.
 context.width = 1920;
 context.height = 1080;
 testNow = new Date("2026-09-16T12:00:00+07:00").getTime();
@@ -850,8 +898,9 @@ for (const day of [0, 1]) {
     .slice(1);
   assert(dailyBars.every((event) => event.args[3] === (day === 0 ? 34 : 51)));
   assert.equal(run("getCampaignTiming(Date.now()).activeDayIndex"), 2);
-  assert.equal(nodes["schedule-weekday"].textContent, "Wednesday");
-  assert.equal(nodes["schedule-date"].textContent, "16 September 2026");
+  assert.equal(nodes["schedule-weekday"].textContent, day === 0 ? "Monday" : "Tuesday");
+  assert.equal(nodes["schedule-date"].textContent, `${14 + day} September 2026`);
+  assert.equal(nodes["festival-schedule"].attributes["data-today"], "false");
 }
 const historicalVotes = run("JSON.stringify(state.votes.slice(0, 5))");
 run("fitAll = false; followLive = false; viewStartSecond = 43199;");
@@ -870,6 +919,9 @@ run("draw();");
 assert.equal(run("getGraphTiming(getCampaignTiming(Date.now())).displayDayIndex"), 6);
 assert.equal(run("getGraphTiming(getCampaignTiming(Date.now())).liveSecond"), 32400);
 assert.equal(run("derived.days[6].total"), 0);
+assert.equal(nodes["schedule-weekday"].textContent, "Sunday");
+assert.equal(nodes["schedule-date"].textContent, "20 September 2026");
+assert.equal(nodes["schedule-status"].textContent, "Upcoming");
 assert(
   !events.some((event) => event.type === "rect" && event.args[0] < 1465),
   "a future empty day cannot show current or historical votes",
@@ -881,6 +933,9 @@ assert.equal(run("getGraphTiming(getCampaignTiming(Date.now())).displayDayIndex"
 assert.equal(run("fitAll"), false);
 assert.equal(run("followLive"), true);
 assert.equal(nodes["view-live"].attributes["aria-pressed"], "true");
+assert.equal(nodes["schedule-weekday"].textContent, "Wednesday");
+assert.equal(nodes["schedule-date"].textContent, "16 September 2026");
+assert.equal(nodes["festival-schedule"].attributes["data-today"], "true");
 assert(
   Array.from(
     { length: 7 },
@@ -917,6 +972,20 @@ run("draw();");
 assert.equal(nodes["overview-days"].hidden, true);
 assert.equal(run("selectOverviewDay(0)"), false);
 assert.equal(run("overviewDayAtPoint(getLayout(), 1500, 900)"), null);
+// Inactivity is checked by the draw loop, including after reopening.
+run(
+  "navigationHelperVisible = true; navigationHelperHovered = false; navigationHelperLastInteractionAt = Date.now();",
+);
+testNow += 59_999;
+run("draw();");
+assert.equal(nodes["navigation-helper"].attributes["data-visible"], "true");
+testNow += 1;
+run("draw();");
+assert.equal(nodes["navigation-helper"].attributes["data-visible"], "false");
+assert.equal(nodes["navigation-helper"].inert, true);
+assert.equal(nodes["panel-toggle"].attributes["aria-expanded"], "false");
+assert.equal(nodes["festival-schedule"].hidden, false);
+
 console.log(
   "Collective Pulse Figma layout, exported assets, drawing, controls, and seven-day graph selection checks passed.",
 );

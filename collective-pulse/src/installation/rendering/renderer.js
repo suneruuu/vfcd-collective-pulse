@@ -38,17 +38,17 @@ export function createRenderer(
     p.textAlign(p.LEFT, p.TOP);
     p.textStyle(p.BOLD);
     p.textSize(20 * ui);
-    p.text("COLLECTIVE PULSE", x, 437 * layout.sy);
+    p.text("COLLECTIVE PULSE", x, 446 * layout.sy);
     p.textStyle(p.NORMAL);
     p.textSize(20 * ui);
-    p.textLeading(24 * ui);
+    p.textLeading(27 * ui);
     p.textWrap(p.WORD);
     p.text(
       "Vietnam's creative community is growing rapidly. Collective Pulse installation asks what kind of future we want to build for design in Vietnam.",
       x,
-      476 * layout.sy,
+      485 * layout.sy,
       contentW,
-      125 * layout.sy,
+      115 * layout.sy,
     );
     p.text(
       "Come & make your choice. Your response becomes part of the collective dataset.",
@@ -57,14 +57,14 @@ export function createRenderer(
       contentW,
       60 * layout.sy,
     );
-    drawPanelRule(layout, 668 * layout.sy);
+    drawPanelRule(layout, 677 * layout.sy);
     if (timing.before) return;
     p.textStyle(p.BOLD);
     p.textSize(20 * ui);
     p.text(
       `${runtime.derived.total.toLocaleString()} RESPONSES`,
       1502 * layout.sx,
-      689 * layout.sy,
+      713 * layout.sy,
     );
     const yesPercent = runtime.derived.total
       ? Math.round((runtime.derived.yes / runtime.derived.total) * 100)
@@ -73,8 +73,8 @@ export function createRenderer(
     p.textAlign(p.LEFT, p.TOP);
     p.textStyle(p.NORMAL);
     p.textSize(20 * ui);
-    p.text(`• YES ${yesPercent}%`, 1519 * layout.sx, 717 * layout.sy);
-    p.text(`• NO ${noPercent}%`, 1519 * layout.sx, 744 * layout.sy);
+    p.text(`• YES ${yesPercent}%`, 1798 * layout.sx, 713 * layout.sy);
+    p.text(`• NO ${noPercent}%`, 1798 * layout.sx, 740 * layout.sy);
     drawPanelRule(layout, 786 * layout.sy);
     p.textStyle(p.BOLD);
     p.textSize(20 * ui);
@@ -510,12 +510,13 @@ export function createRenderer(
       (ripple) => nowMillis - ripple.bornAt < CONFIG.VOTE_RIPPLE_MS,
     );
     if (runtime.ripples.length === 0) return;
-    const centerX = layout.mainW * 0.5;
+    // The reference anchors the drop below the lower-left part of the display.
+    const centerX = 300 * layout.sx;
     const centerY = 1156 * layout.sy;
     const ctx = p.drawingContext;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(0, 855 * layout.sy, layout.mainW, p.height - 855 * layout.sy);
+    ctx.rect(0, 0, layout.mainW, p.height);
     ctx.clip();
     for (const ripple of runtime.ripples) {
       const age = nowMillis - ripple.bornAt;
@@ -551,6 +552,9 @@ export function createRenderer(
       const alpha = alphaLevels[rowSlot];
       const enterOffset = isNewest ? (1 - easeOutCubic(newestAnimation)) * 18 * ui : 0;
       const y = promptLayout.rows[rowSlot] + enterOffset;
+      // Fade only the row content, preserving the drop glow underneath.
+      p.push();
+      p.drawingContext.globalAlpha = clamp((y - 855 * layout.sy) / (59 * layout.sy), 0, 1);
       p.fill(255, isNewest ? 153 : alpha);
       p.textAlign(p.LEFT, p.CENTER);
       p.textSize(16 * ui);
@@ -569,19 +573,9 @@ export function createRenderer(
       p.textSize(fittedTextSize(question, promptLayout.w, 24 * ui, 14 * ui));
       p.textAlign(p.LEFT, p.CENTER);
       p.text(question, promptLayout.questionX, y);
+      p.pop();
     }
 
-    // The reference fades the oldest row into the black area above the feed.
-    const ctx = p.drawingContext;
-    const fadeTop = 855 * layout.sy;
-    const fadeHeight = 59 * layout.sy;
-    const gradient = ctx.createLinearGradient(0, fadeTop, 0, fadeTop + fadeHeight);
-    gradient.addColorStop(0, "#000");
-    gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
-    ctx.save();
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, fadeTop, layout.mainW, fadeHeight);
-    ctx.restore();
     p.textAlign(p.LEFT, p.TOP);
     p.textStyle(p.NORMAL);
   }

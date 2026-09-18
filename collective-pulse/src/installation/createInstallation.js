@@ -10,6 +10,7 @@ import { createCamera } from "./domain/camera.js";
 import { createVoteSampler } from "./domain/voteSampler.js";
 import { createCanvasInput } from "./rendering/canvasInput.js";
 import { createController } from "./domain/controller.js";
+import { createNavigationHelper } from "./domain/navigationHelper.js";
 import { createRenderer } from "./rendering/renderer.js";
 import { createViewport } from "./rendering/viewport.js";
 import { createQueueCache } from "../services/queueCache.js";
@@ -26,6 +27,7 @@ export function createInstallation({
   clock = Date,
 }) {
   const runtime = createRuntime();
+  const navigationHelper = createNavigationHelper(runtime, { clock });
   const cache = createQueueCache(storage);
   const announce = (text) => {
     runtime.status = text;
@@ -148,11 +150,13 @@ export function createInstallation({
     runtime.lastFrameDayIndex = timing.activeDayIndex;
     prompts.ensurePromptDay(timing, clock.now());
     input.resetInputSampling();
+    navigationHelper.interact();
     focusCanvas();
     return canvas;
   }
   function draw() {
     const now = clock.now();
+    navigationHelper.update(now);
     const timing = campaign.getCampaignTiming(now);
     const layout = viewport.getLayout();
     phase.updateTimedScreen(layout, timing, now);
@@ -165,10 +169,10 @@ export function createInstallation({
     p.background(0);
     renderer.drawInformationPanel(layout, timing, now);
     if (!timing.before) {
+      if (timing.active) renderer.drawRipples(layout, now);
       renderer.drawMainHeader(layout);
       renderer.drawDailyGraph(layout, graphTiming, now);
       if (timing.active) {
-        renderer.drawRipples(layout, now);
         renderer.drawPrompts(layout, timing, now);
       }
     }
@@ -211,10 +215,12 @@ export function createInstallation({
       camera.activateFitAll();
       focusCanvas();
     },
-    togglePanel: () => {
-      runtime.informationPanelVisible = !runtime.informationPanelVisible;
+    toggleNavigationHelper: () => {
+      navigationHelper.toggle();
       focusCanvas();
     },
+    interactNavigationHelper: navigationHelper.interact,
+    setNavigationHelperHovered: navigationHelper.setHovered,
     togglePreview,
     selectDay: camera.selectOverviewDay,
   };
@@ -237,6 +243,7 @@ export function createInstallation({
     input,
     renderer,
     controller,
+    navigationHelper,
     constants: {
       CONFIG,
       YES,

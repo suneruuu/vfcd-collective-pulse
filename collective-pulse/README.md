@@ -21,11 +21,13 @@ npm ci
 npm run build
 npm start
 ```
-
-
+```
+  $env:PORT = "8000"
+```
 ## Private remote management with Tailscale
 
 ```powershell
 tailscale serve --bg http://127.0.0.1:8000
 tailscale serve status
 ```
+

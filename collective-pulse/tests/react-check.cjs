@@ -194,7 +194,100 @@ async function synchronizerChecks() {
   sync.stop();
   assert.equal(timers.timers.size, 0);
 }
+function navigationHelperChecks() {
+  let now = 10_000;
+  const clock = { now: () => now };
+  const engine = createInstallation({ p: {}, storage: {}, clock });
+  const { runtime, actions, navigationHelper } = engine;
+  const advance = (milliseconds) => {
+    now += milliseconds;
+    navigationHelper.update();
+  };
+  advance(59_999);
+  assert.equal(runtime.navigationHelperVisible, true);
+  advance(1);
+  assert.equal(runtime.navigationHelperVisible, false, "The helper closes after one idle minute");
+  assert.equal(runtime.informationPanelVisible, true);
+
+  actions.toggleNavigationHelper();
+  advance(50_000);
+  actions.interactNavigationHelper();
+  advance(59_999);
+  assert.equal(runtime.navigationHelperVisible, true, "Interaction starts a fresh idle minute");
+  advance(1);
+  assert.equal(runtime.navigationHelperVisible, false);
+
+  actions.toggleNavigationHelper();
+  actions.setNavigationHelperHovered(true);
+  advance(180_000);
+  assert.equal(runtime.navigationHelperVisible, true, "A stationary hover keeps the helper open");
+  actions.setNavigationHelperHovered(false);
+  advance(59_999);
+  assert.equal(
+    runtime.navigationHelperVisible,
+    true,
+    "Leaving the helper starts a fresh idle minute",
+  );
+  advance(1);
+  assert.equal(runtime.navigationHelperVisible, false);
+
+  actions.toggleNavigationHelper();
+  advance(59_999);
+  assert.equal(runtime.navigationHelperVisible, true, "Reopening resets the idle timer");
+  actions.toggleNavigationHelper();
+  actions.interactNavigationHelper();
+  advance(60_000);
+  assert.equal(runtime.navigationHelperVisible, false, "Interaction cannot reopen a closed helper");
+
+  const open = fixtures.installationMarkup({ navigationHelperVisible: true });
+  assert(/id="navigation-helper"[^>]*data-visible="true"[^>]*aria-hidden="false"/.test(open));
+  assert(!/id="navigation-helper"[^>]*inert=""/.test(open));
+}
+
+function overviewScheduleChecks() {
+  const { DISPLAY_SCHEDULE_DAYS, festivalDayAt } = load("src/schedule/domain.js");
+  const now = new Date(DISPLAY_SCHEDULE_DAYS[2].date + "T12:00:00+07:00").getTime();
+  const text = (markup, id) => markup.match(new RegExp('id="' + id + '"[^>]*>([^<]*)<'))?.[1];
+  const render = (selectedOverviewDay) =>
+    fixtures.installationMarkup({
+      now,
+      phase: "open",
+      active: true,
+      selectedOverviewDay,
+    });
+  for (const [dayIndex, day] of DISPLAY_SCHEDULE_DAYS.entries()) {
+    const markup = render(dayIndex);
+    assert.equal(text(markup, "schedule-weekday"), day.weekday);
+    assert(markup.includes('id="schedule-date" dateTime="' + day.date + '"'));
+    const firstVisible = day.events.find((event) => ![4, 5].includes(Number(event.track)));
+    assert(markup.includes(firstVisible.title.replaceAll("&", "&amp;")));
+    assert(!/class="schedule-card-track">Track [45]</.test(markup));
+    assert.equal(/id="schedule-now"[^>]*hidden=""/.test(markup), dayIndex !== 2);
+    assert(markup.includes('data-today="' + String(dayIndex === 2) + '"'));
+  }
+  const live = render(null);
+  assert.equal(text(live, "schedule-weekday"), "Wednesday");
+  assert(!/id="schedule-now"[^>]*hidden=""/.test(live));
+  for (const invalid of [-1, 7, 1.5, "0", NaN]) {
+    assert.equal(festivalDayAt(now, invalid), DISPLAY_SCHEDULE_DAYS[2]);
+  }
+}
+
 function reactChecks() {
+  const collapsed = fixtures.installationMarkup({ navigationHelperVisible: false });
+  assert(
+    /id="navigation-helper"[^>]*data-visible="false"[^>]*aria-hidden="true"[^>]*inert=""/.test(
+      collapsed,
+    ),
+  );
+  assert(!/id="navigation-helper"[^>]*hidden=""/.test(collapsed));
+  assert(
+    /id="panel-toggle"[^>]*aria-controls="navigation-helper"[^>]*aria-expanded="false"/.test(
+      collapsed,
+    ),
+  );
+  assert(!/id="festival-schedule"[^>]*hidden=""/.test(collapsed));
+  assert(!/id="overview-days"[^>]*hidden=""/.test(collapsed));
   const queue = document(4);
   queue.prompts[0].text = "<script>alert(1)</script> & question";
   queue.prompts[1].hidden = true;
@@ -241,6 +334,8 @@ function reactChecks() {
   await managerChecks();
   await synchronizerChecks();
   reactChecks();
+  navigationHelperChecks();
+  overviewScheduleChecks();
   console.log(
     "React component, isolated session, request cancellation, polling lifecycle, conflict, and stale response checks passed.",
   );
