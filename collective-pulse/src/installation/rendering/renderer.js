@@ -85,7 +85,7 @@ export function createRenderer(
     p.textStyle(p.BOLD);
     p.textSize(20 * ui);
     p.textAlign(p.RIGHT, p.TOP);
-    p.text(formatting.formatCampaignElapsed(now), 1887 * layout.sx, 953 * layout.sy);
+    p.text(formatting.formatCampaignElapsed(now), 1887 * layout.sx, 838 * layout.sy);
     p.textAlign(p.LEFT, p.TOP);
     p.textStyle(p.NORMAL);
   }
@@ -109,13 +109,12 @@ export function createRenderer(
     // Keep a small number of votes proportional to the main graph instead of
     // stretching the first vote to fill the entire miniature chart.
     const baseScale = (CONFIG.BASE_VOTE_HEIGHT / CONFIG.STEP_Y) * layout.ui * (137 / 514);
-    const positiveScale =
-      history.maxValue > 0 ? ((baseline - 877 * layout.sy) * 0.88) / history.maxValue : baseScale;
-    const negativeScale =
-      history.minValue < 0
-        ? ((1008 * layout.sy - baseline) * 0.88) / Math.abs(history.minValue)
-        : baseScale;
-    return Math.min(baseScale, positiveScale, negativeScale);
+    const maxAbs = Math.max(Math.abs(history.minValue), Math.abs(history.maxValue));
+    if (maxAbs === 0) return baseScale;
+    // Reserve equal room and padding for positive and negative balances.
+    const availableHalfHeight =
+      Math.min(baseline - 877 * layout.sy, 1008 * layout.sy - baseline) * 0.88;
+    return Math.min(baseScale, availableHalfHeight / maxAbs);
   }
   function drawOverviewGraph(layout, timing, now = clock.now()) {
     const { x, w, baseline } = layout.overview;

@@ -33,7 +33,7 @@ export function createViewport(runtime, { p }) {
         y: 838 * sy,
         w: 389 * sx,
         h: 216 * sy,
-        baseline: 983 * sy,
+        baseline: (874 + 137 / 2) * sy,
       },
       graph,
       prompt: {

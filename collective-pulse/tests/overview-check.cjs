@@ -19,6 +19,9 @@ const context = {
   height: 1080,
   HALF_PI: Math.PI / 2,
   LEFT: "left",
+  RIGHT: "right",
+  NORMAL: "normal",
+  WORD: "word",
   TOP: "top",
   BOLD: "bold",
   min: Math.min,
@@ -46,6 +49,9 @@ for (const type of [
   "textSize",
   "textStyle",
   "textAlign",
+  "textLeading",
+  "textWrap",
+  "rect",
   "fill",
   "noStroke",
   "push",
@@ -94,10 +100,12 @@ for (const [index, divider] of dividers.entries()) {
   almostEqual(divider.args[0], x + ((index + 1) * w) / 7 - 0.5);
   assert.deepEqual(divider.args.slice(1), [874, 1.00001, 168]);
 }
-assert.deepEqual(
-  events.find((event) => event.source === "assets/overview-baseline.svg").args,
-  [1498, 982.5, 389, 1],
-);
+assert.deepEqual(events.find((event) => event.source === "assets/overview-baseline.svg").args, [
+  1498,
+  baseline - 0.5,
+  389,
+  1,
+]);
 assert.deepEqual(
   events.find((event) => event.source === "assets/overview-cursor.svg").args,
   [-2.66667, -2.666665, 139.667, 5.33333],
@@ -342,21 +350,25 @@ assert.equal(run("state.votes.length"), 4200);
 
 now = new Date("2026-09-16T12:00:00+07:00").getTime();
 for (const [width, height] of [
+  [1920, 1080],
   [960, 540],
   [1440, 1080],
+  [1920, 540],
 ]) {
   context.width = width;
   context.height = height;
   render();
   const sx = width / 1920,
     sy = height / 1080;
+  const scaledBaseline = run("getLayout().overview.baseline");
+  almostEqual(scaledBaseline, (874 + 137 / 2) * sy);
   const cursor = events.find((event) => event.source === "assets/overview-cursor.svg");
   assert.deepEqual(cursor.args, [-2.66667 * sy, -2.666665 * sx, 139.667 * sy, 5.33333 * sx]);
   const divider = events.find((event) => event.source === "assets/overview-day-rule.svg");
   assert.deepEqual(divider.args.slice(1), [874 * sy, 1.00001 * sx, 168 * sy]);
   assert.deepEqual(events.find((event) => event.source === "assets/overview-baseline.svg").args, [
     1498 * sx,
-    982.5 * sy,
+    scaledBaseline - 0.5 * sy,
     389 * sx,
     sy,
   ]);
@@ -364,6 +376,45 @@ for (const [width, height] of [
   for (const event of events)
     for (const number of event.args)
       if (typeof number === "number") assert(Number.isFinite(number));
+  // Equal YES and NO histories must mirror around zero at every viewport size,
+  // whether a single vote is uncompressed or a long history needs fitting.
+  for (const count of [1, 16, 1000]) {
+    const histories = [1, -1].map((choice) => {
+      run(
+        `state.votes = Array.from({ length: ${count} }, (_, i) => [Date.now() - 7200000 + i * 1000, ${choice}]); rebuildDerived();`,
+      );
+      const scale = run("overviewVerticalScale(getLayout(), derived.overview)");
+      const trace = render().map((event) => event.args);
+      assert((scaledBaseline - trace.at(-1)[3]) * choice > 0);
+      assert(
+        trace.every((line) => [line[1], line[3]].every((y) => y > 874 * sy && y < 1011 * sy)),
+        "Both signs must fit inside the overview plot",
+      );
+      if (count === 1000) almostEqual(Math.abs(trace.at(-1)[3] - scaledBaseline), 65.5 * sy * 0.88);
+      return { scale, trace };
+    });
+    const [positive, negative] = histories;
+    almostEqual(positive.scale, negative.scale);
+    assert.equal(positive.trace.length, negative.trace.length);
+    positive.trace.forEach((line, index) => {
+      const mirrored = negative.trace[index];
+      almostEqual(line[0], mirrored[0]);
+      almostEqual(line[2], mirrored[2]);
+      almostEqual(line[1] + mirrored[1], 2 * scaledBaseline);
+      almostEqual(line[3] + mirrored[3], 2 * scaledBaseline);
+    });
+  }
+
+  events.length = 0;
+  run("drawInformationPanel(getLayout(), getCampaignTiming(Date.now()), Date.now());");
+  const elapsed = events.find(
+    (event) => event.type === "text" && event.args[0] === run("formatCampaignElapsed(Date.now())"),
+  );
+  assert.deepEqual(elapsed.args.slice(1), [1887 * sx, 838 * sy]);
+  assert(
+    elapsed.args[2] + 20 * Math.min(sx, sy) < 874 * sy,
+    "Elapsed time must stay above the plot",
+  );
 }
 for (const [file, dimensions] of Object.entries({
   "overview-day-rule.svg": [1.00001, 168],
