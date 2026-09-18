@@ -1,0 +1,27 @@
+{
+  "name": "collective-pulse",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "node server.js --dev",
+    "build": "vite build",
+    "start": "node server.js",
+    "test": "node scripts/run-checks.cjs",
+    "format": "prettier --write src shared server tests scripts server.js vite.config.js index.html README.md package.json .prettierrc.json"
+  },
+  "dependencies": {
+    "p5": "^1.11.10",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.1",
+    "esbuild": "^0.28.2",
+    "prettier": "^3.9.8",
+    "vite": "^8.3.0"
+  }
+}

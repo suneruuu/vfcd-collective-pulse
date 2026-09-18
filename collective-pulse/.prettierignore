@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.pulse-data/
+public/assets/
+package-lock.json

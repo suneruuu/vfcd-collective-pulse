@@ -1,0 +1,593 @@
+:root {
+  --sx: calc(100vw / 1920);
+  --sy: calc(100vh / 1080);
+  --ui: min(var(--sx), var(--sy));
+  color-scheme: dark;
+  background: #000;
+  font-family: "Iosevka Charon", Iosevka, "Arial Narrow", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+body {
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+#app,
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+canvas {
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#view-controls {
+  --control-offset: 0px;
+  position: absolute;
+  left: calc(1200 * var(--sx) + var(--control-offset));
+  top: calc(26 * var(--sy));
+  width: calc(265 * var(--sx));
+  height: calc(81 * var(--sy));
+  pointer-events: none;
+}
+
+#view-controls button {
+  position: absolute;
+  top: 0;
+  height: calc(33 * var(--sy));
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 40%);
+  border-radius: 0;
+  background: #000;
+  color: rgb(255 255 255 / 40%);
+  font:
+    700 calc(16 * var(--ui)) "Iosevka Charon",
+    monospace;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+#view-controls button:hover,
+#view-controls button:focus-visible {
+  border-color: #fff;
+  color: #fff;
+}
+
+#view-controls button:focus-visible {
+  outline: 1px solid #fff;
+  outline-offset: 3px;
+}
+
+#view-controls img {
+  display: block;
+  position: absolute;
+}
+
+#view-zoom-in {
+  left: calc(5 * var(--sx));
+  width: calc(33 * var(--sx));
+}
+
+#view-zoom-out {
+  left: calc(37 * var(--sx));
+  width: calc(34 * var(--sx));
+}
+
+.plus-vertical {
+  left: calc(7 * var(--sx));
+  top: calc(15 * var(--sy));
+  width: calc(16 * var(--ui));
+  height: calc(2 * var(--ui));
+  transform: rotate(90deg);
+}
+
+.plus-horizontal {
+  left: calc(7 * var(--sx));
+  top: calc(15 * var(--sy));
+  width: calc(16 * var(--sx));
+  height: calc(2 * var(--sy));
+}
+
+.minus-horizontal {
+  left: calc(7 * var(--sx));
+  top: calc(14 * var(--sy));
+  width: calc(17 * var(--sx));
+  height: calc(2 * var(--sy));
+}
+
+.zoom-button img {
+  opacity: 0.4;
+}
+
+#view-live {
+  left: calc(81 * var(--sx));
+  width: calc(67 * var(--sx));
+}
+
+#view-fit {
+  left: calc(158 * var(--sx));
+  width: calc(67 * var(--sx));
+}
+
+.mode-button img {
+  left: calc(6 * var(--sx));
+  top: calc(6 * var(--sy));
+  width: calc(20 * var(--ui));
+  height: calc(20 * var(--ui));
+}
+
+#view-fit img {
+  left: calc(8 * var(--sx));
+}
+
+.mode-button span {
+  position: absolute;
+  left: calc(28 * var(--sx));
+  top: calc(5 * var(--sy));
+  line-height: calc(20 * var(--ui));
+}
+
+#view-controls #panel-toggle {
+  left: calc(244 * var(--sx));
+  top: calc(1 * var(--sy));
+  width: calc(21 * var(--sx));
+  border: 0;
+}
+
+#panel-toggle img {
+  inset: 0;
+  width: calc(21 * var(--sx));
+  height: calc(33 * var(--sy));
+}
+
+#panel-toggle[aria-expanded="false"] img {
+  transform: rotate(180deg);
+}
+
+#panel-toggle .waiting-toggle,
+#panel-toggle .daily-toggle {
+  display: none;
+}
+
+#view-controls[data-waiting="true"] .zoom-button,
+#view-controls[data-waiting="true"] .mode-button,
+#view-controls[data-waiting="true"] .scroll-hint,
+#view-controls[data-waiting="true"] #panel-toggle img {
+  display: none;
+}
+
+#view-controls[data-waiting="true"][data-phase="before-event"] #panel-toggle .waiting-toggle {
+  display: block;
+  transform: rotate(180deg);
+}
+
+#view-controls[data-waiting="true"][data-phase="before-event"]
+  #panel-toggle[aria-expanded="false"]
+  .waiting-toggle {
+  transform: none;
+}
+
+#view-controls[data-waiting="true"]:not([data-phase="before-event"]) #panel-toggle .daily-toggle {
+  display: block;
+}
+
+#campaign-screen {
+  --main-width: calc(1465 * var(--sx));
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--main-width);
+  height: calc(1081 * var(--sy));
+  background: rgb(255 255 255 / 1%);
+  backdrop-filter: blur(calc(15 * var(--ui)));
+  -webkit-backdrop-filter: blur(calc(15 * var(--ui)));
+}
+
+#campaign-screen[hidden],
+#view-pulse[hidden] {
+  display: none;
+}
+
+#campaign-screen[data-phase="before-event"] {
+  background: #000;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+#campaign-screen p {
+  position: absolute;
+  left: 0;
+  width: calc(var(--main-width) - var(--sx));
+  margin: 0;
+  color: #fff;
+  font-family: "Iosevka Charon", monospace;
+  font-weight: 400;
+  text-align: center;
+  line-height: 1.1;
+}
+
+#campaign-screen-label {
+  top: calc(859 * var(--sy));
+  font-size: calc(24 * var(--ui));
+}
+
+#campaign-screen-value {
+  top: calc(893 * var(--sy));
+  font-size: calc(84 * var(--ui));
+  white-space: nowrap;
+}
+
+#campaign-screen[data-phase="before-event"] #campaign-screen-label {
+  top: calc(914 * var(--sy));
+}
+
+#campaign-screen[data-phase="before-event"] #campaign-screen-value {
+  top: calc(948 * var(--sy));
+}
+
+#view-pulse {
+  position: absolute;
+  left: calc((var(--main-width) - 139 * var(--sx)) / 2);
+  top: calc(1008 * var(--sy));
+  width: calc(139 * var(--sx));
+  height: calc(33 * var(--sy));
+  padding: 0;
+  border: 1px solid #fff;
+  border-radius: 0;
+  background: #000;
+  color: #fff;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+#view-pulse img {
+  position: absolute;
+  left: calc(14 * var(--sx) - 1px);
+  top: calc(4 * var(--sy) - 1px);
+  width: calc(24 * var(--sx));
+  height: calc(24 * var(--sy));
+}
+
+#view-pulse-label {
+  position: absolute;
+  left: calc(46 * var(--sx) - 1px);
+  top: calc(7 * var(--sy) - 1px);
+  width: calc(79 * var(--sx));
+  height: calc(18 * var(--sy));
+  font:
+    700 calc(16 * var(--ui))/1.1 "Iosevka Charon",
+    monospace;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+#view-pulse:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+#campaign-screen[data-preview="true"] {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  pointer-events: none;
+}
+
+#campaign-screen[data-preview="true"] .campaign-screen-copy {
+  display: none;
+}
+
+#festival-schedule[data-phase]:not([data-phase="open"]) .schedule-live-icon {
+  display: none;
+}
+
+#festival-schedule[data-phase]:not([data-phase="open"]) #schedule-weekday {
+  left: calc(33 * var(--sx));
+}
+
+.scroll-hint {
+  position: absolute;
+  left: 0;
+  top: calc(48 * var(--sy));
+  margin: 0;
+  color: rgb(255 255 255 / 40%);
+  white-space: nowrap;
+  font-size: calc(20 * var(--ui));
+}
+
+.scroll-hint img {
+  left: 0;
+  top: calc(1 * var(--sy));
+  width: calc(24 * var(--ui));
+  height: calc(24 * var(--ui));
+}
+
+.scroll-hint span {
+  margin-left: calc(26 * var(--sx));
+}
+
+#festival-schedule {
+  position: absolute;
+  left: calc(1465 * var(--sx));
+  top: 0;
+  width: calc(455 * var(--sx));
+  height: calc(409 * var(--sy));
+  overflow: hidden;
+  background: #222;
+  color: rgb(255 255 255 / 80%);
+}
+
+#festival-schedule[hidden],
+#schedule-now[hidden] {
+  display: none;
+}
+
+.schedule-header {
+  font-size: calc(20 * var(--ui));
+  line-height: calc(25 * var(--ui));
+  text-transform: uppercase;
+}
+
+.schedule-live-icon {
+  position: absolute;
+  left: calc(23 * var(--sx));
+  top: calc(33 * var(--sy));
+  width: calc(20 * var(--ui));
+  height: calc(20 * var(--ui));
+}
+
+#schedule-weekday {
+  position: absolute;
+  left: calc(45 * var(--sx));
+  top: calc(30 * var(--sy));
+  font-style: italic;
+}
+
+#schedule-date {
+  position: absolute;
+  right: calc(34 * var(--sx));
+  top: calc(30 * var(--sy));
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.schedule-venue {
+  position: absolute;
+  top: calc(83 * var(--sy));
+  font-size: calc(20 * var(--ui));
+  white-space: nowrap;
+}
+
+.schedule-venue-nina {
+  left: calc(89 * var(--sx));
+}
+
+.schedule-venue-satellite {
+  left: calc(264 * var(--sx));
+}
+
+#schedule-scroll {
+  position: absolute;
+  left: calc(27 * var(--sx));
+  top: calc(120 * var(--sy));
+  width: calc(401 * var(--sx));
+  height: calc(251 * var(--sy));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+#schedule-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+#schedule-scroll:focus-visible {
+  outline: 1px solid rgb(255 255 255 / 40%);
+  outline-offset: calc(3 * var(--ui));
+}
+
+#schedule-events {
+  margin-left: calc(5 * var(--sx));
+  width: calc(391 * var(--sx));
+}
+
+.schedule-row {
+  display: grid;
+  grid-template-columns: calc(48 * var(--sx)) calc(176 * var(--sx)) calc(167 * var(--sx));
+  height: calc(var(--row-height) * var(--sy));
+}
+
+.schedule-time {
+  color: rgb(255 255 255 / 40%);
+  font-size: calc(16 * var(--ui));
+  line-height: calc(20 * var(--ui));
+}
+
+.schedule-lane {
+  padding-left: calc(9 * var(--sx));
+}
+
+.schedule-lane:last-child {
+  padding-left: calc(8 * var(--sx));
+}
+
+.schedule-card {
+  width: calc(159 * var(--sx));
+  height: calc(122 * var(--sy));
+  margin-bottom: calc(7 * var(--sy));
+  padding: calc(9 * var(--sy)) calc(11 * var(--sx));
+  overflow: hidden;
+  border-radius: calc(3 * var(--ui));
+  background: #000;
+  font-size: calc(16 * var(--ui));
+  line-height: calc(20 * var(--ui));
+}
+
+.schedule-card p {
+  margin: 0;
+}
+
+.schedule-card-title,
+.schedule-card-location {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.schedule-card-title {
+  min-height: calc(40 * var(--ui));
+}
+
+.schedule-card-track {
+  line-height: calc(16 * var(--ui));
+}
+
+.schedule-card-detail,
+.schedule-card-location {
+  color: rgb(255 255 255 / 40%);
+  font-size: calc(14 * var(--ui));
+  line-height: calc(16 * var(--ui));
+}
+
+.schedule-end {
+  height: calc(20 * var(--sy));
+}
+
+.schedule-column-rule {
+  position: absolute;
+  top: calc(120 * var(--sy));
+  width: calc(2 * var(--sx));
+  height: calc(251 * var(--sy));
+  pointer-events: none;
+}
+
+.schedule-column-rule-nina {
+  left: calc(80 * var(--sx));
+}
+
+.schedule-column-rule-satellite {
+  left: calc(256 * var(--sx));
+}
+
+.schedule-column-rule img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(251 * var(--sy));
+  height: calc(2 * var(--sx));
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+#schedule-now {
+  position: absolute;
+  left: calc(5.5 * var(--sx));
+  top: var(--now-y, 0px);
+  width: calc(377 * var(--sx));
+  height: 0;
+  pointer-events: none;
+}
+
+#schedule-now img {
+  position: absolute;
+  left: calc(-5.33333 * var(--sx));
+  top: calc(-5.33333 * var(--sy));
+  width: calc(383.333 * var(--sx));
+  height: calc(10.6667 * var(--sy));
+  transform: rotate(180deg);
+}
+
+.schedule-source,
+#schedule-status {
+  position: absolute;
+  bottom: calc(14 * var(--sy));
+  color: rgb(255 255 255 / 40%);
+  font-size: calc(12 * var(--ui));
+  line-height: calc(16 * var(--ui));
+}
+
+.schedule-source {
+  left: calc(32 * var(--sx));
+  text-decoration: none;
+}
+
+.schedule-source:hover,
+.schedule-source:focus-visible {
+  color: #fff;
+  text-decoration: underline;
+}
+
+#schedule-status {
+  right: calc(34 * var(--sx));
+}
+
+#overview-days {
+  position: absolute;
+  left: calc(1498 * var(--sx));
+  top: calc(874 * var(--sy));
+  width: calc(389 * var(--sx));
+  height: calc(168 * var(--sy));
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  pointer-events: none;
+}
+
+#overview-days[hidden] {
+  display: none;
+}
+
+#overview-days button {
+  appearance: none;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+#overview-days button:focus-visible {
+  outline: 1px solid #000;
+  outline-offset: -2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.startup-error {
+  position: absolute;
+  inset: 24px auto auto 24px;
+  color: #ff6d05;
+  z-index: 10;
+}
