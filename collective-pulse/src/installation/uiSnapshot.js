@@ -23,7 +23,7 @@ export function getUiSnapshot(runtime, timing, now, layout, formatting) {
         (day + 1) +
         ", " +
         formatting.formatDate(runtime.campaignStartMs + day * CONFIG.DAY_MS) +
-        " graph",
+        " graph and schedule",
     ),
   };
 }

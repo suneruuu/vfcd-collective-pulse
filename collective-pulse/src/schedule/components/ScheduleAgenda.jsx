@@ -4,10 +4,7 @@ export function ScheduleAgenda({ timeline }) {
   return (
     <div id="schedule-events" style={{ "--timeline-height": timeline.height }}>
       <section className="schedule-lane schedule-lane-nina" aria-label="NINA Next Space events">
-        <h2
-          className="schedule-venue schedule-venue-nina"
-          style={{ "--venue-y": 52 + (timeline.ninaHeight - 155) / 2 }}
-        >
+        <h2 className="schedule-venue schedule-venue-nina" style={{ "--venue-y": 52 }}>
           NINA Next Space
         </h2>
         {timeline.nina.map((event) => (

@@ -6,7 +6,6 @@ export const SCHEDULE_TIMELINE = Object.freeze({
   DEFAULT_START: 9 * 60,
   DEFAULT_END: 19 * 60,
   MIN_NINA_HEIGHT: 155,
-  MIN_ROW_HEIGHT: 39,
 });
 
 export function vietnamScheduleDate(now) {
@@ -32,17 +31,15 @@ export function festivalDisplayDays(startDate = INSTALLATION_WEEK.START_DATE) {
 
 export const DISPLAY_SCHEDULE_DAYS = Object.freeze(festivalDisplayDays());
 
-export function festivalDayAt(now) {
+export function festivalDayAt(now, selectedDayIndex = null) {
+  if (Number.isInteger(selectedDayIndex) && DISPLAY_SCHEDULE_DAYS[selectedDayIndex]) {
+    return DISPLAY_SCHEDULE_DAYS[selectedDayIndex];
+  }
   const date = vietnamScheduleDate(now);
   return (
     DISPLAY_SCHEDULE_DAYS.find((day) => day.date >= date) ??
     DISPLAY_SCHEDULE_DAYS[DISPLAY_SCHEDULE_DAYS.length - 1]
   );
-}
-
-export function scheduleMinutes(clock) {
-  const [hours, minutes] = clock.split(":").map(Number);
-  return hours * 60 + minutes;
 }
 
 export function scheduleMarkerX(timeline, minute) {
@@ -52,83 +49,28 @@ export function scheduleMarkerX(timeline, minute) {
 
 export function buildScheduleTimeline(day) {
   const events = day.events
-    .flatMap((event) =>
-      (event.sessions ?? [{ start: event.start, end: event.end }]).map((session, index) => {
-        const startMinute = scheduleMinutes(session.start);
-        return {
-          ...event,
-          ...session,
-          sessionKey: event.id + "-" + index,
-          startMinute,
-          // An event without a published end gets a one-hour visual bar.
-          endMinute: session.end ? scheduleMinutes(session.end) : startMinute + 60,
-        };
-      }),
-    )
-    .sort((a, b) => a.startMinute - b.startMinute || a.track - b.track);
-  const startMinute = Math.min(
-    SCHEDULE_TIMELINE.DEFAULT_START,
-    ...events.map((event) => Math.floor(event.startMinute / 60) * 60),
-  );
-  const endMinute = Math.max(
-    SCHEDULE_TIMELINE.DEFAULT_END,
-    ...events.map((event) => Math.ceil(event.endMinute / 60) * 60),
-  );
-  const timeline = { startMinute, endMinute };
-  const hours = (endMinute - startMinute) / 60;
-  const labelStep = hours > 11 ? 2 : 1;
-  const tickMinutes = Array.from(
-    { length: Math.floor(hours / labelStep) + 1 },
-    (_, index) => startMinute + index * labelStep * 60,
-  );
-  if (tickMinutes.at(-1) !== endMinute) {
-    tickMinutes[tickMinutes.length - 1] = endMinute;
-  }
-  const ticks = tickMinutes.map((minute) => {
-    return {
-      label: String(Math.floor(minute / 60)).padStart(2, "0") + ":00",
-      x: scheduleMarkerX(timeline, minute),
-    };
-  });
-  const place = (column, top) => {
-    let y = top + 14;
-    const placed = column.map((event) => {
-      const x = scheduleMarkerX(timeline, event.startMinute);
-      const width = scheduleMarkerX(timeline, event.endMinute) - x;
-      const labelX = Math.min(x, SCHEDULE_TIMELINE.WIDTH - 160);
-      const labelWidth = SCHEDULE_TIMELINE.WIDTH - labelX;
-      const titleLines = Math.ceil(event.title.length / Math.max(1, (labelWidth - 58) / 6.5));
-      const satellite = !/Nina Next Space/i.test(event.venue);
-      const rowHeight = Math.max(
-        SCHEDULE_TIMELINE.MIN_ROW_HEIGHT,
-        12 + (titleLines + (satellite ? 1 : 0)) * 17,
-      );
-      const placedEvent = { ...event, x, width, labelX, labelWidth, y };
-      y += rowHeight;
-      return placedEvent;
-    });
-    return { events: placed, endY: y + 14 };
+    .filter((event) => ![4, 5].includes(Number(event.track)))
+    .map((event) => ({
+      ...event,
+      ...event.layout,
+      sessionKey: event.id,
+      labelX: event.layout.labelX ?? event.layout.x,
+    }));
+  const timeline = {
+    startMinute: SCHEDULE_TIMELINE.DEFAULT_START,
+    endMinute: SCHEDULE_TIMELINE.DEFAULT_END,
   };
-  const nina = place(
-    events.filter((event) => /Nina Next Space/i.test(event.venue)),
-    0,
-  );
-  const ninaHeight = Math.max(SCHEDULE_TIMELINE.MIN_NINA_HEIGHT, nina.endY);
-  const satellite = place(
-    events.filter((event) => !/Nina Next Space/i.test(event.venue)),
-    ninaHeight,
-  );
   return {
     ...timeline,
-    ticks,
-    gridWidth: (388 * 600) / (endMinute - startMinute),
-    gridOffsets: Array.from(
-      { length: Math.ceil((endMinute - startMinute) / 600) },
-      (_, index) => (index * SCHEDULE_TIMELINE.WIDTH * 600) / (endMinute - startMinute),
-    ),
-    nina: nina.events,
-    satellite: satellite.events,
-    ninaHeight,
-    height: Math.max(333, satellite.endY),
+    ticks: Array.from({ length: 11 }, (_, index) => ({
+      label: String(9 + index).padStart(2, "0") + ":00",
+      x: scheduleMarkerX(timeline, (9 + index) * 60),
+    })),
+    gridWidth: 388,
+    gridOffsets: [0],
+    nina: events.filter((event) => /Nina Next Space/i.test(event.venue)),
+    satellite: events.filter((event) => !/Nina Next Space/i.test(event.venue)),
+    ninaHeight: day.ninaHeight ?? SCHEDULE_TIMELINE.MIN_NINA_HEIGHT,
+    height: 333,
   };
 }

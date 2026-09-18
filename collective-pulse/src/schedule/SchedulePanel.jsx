@@ -6,11 +6,17 @@ import {
   buildScheduleTimeline,
   scheduleMarkerX,
 } from "./domain.js";
+import { FESTIVAL_SCHEDULE } from "./data.js";
 import { ScheduleAgenda } from "./components/ScheduleAgenda.jsx";
 
-export function SchedulePanel({ now: externalNow, visible = true, phase }) {
+export function SchedulePanel({
+  now: externalNow,
+  visible = true,
+  phase,
+  selectedDayIndex = null,
+}) {
   const now = useClock(externalNow);
-  const day = festivalDayAt(now);
+  const day = festivalDayAt(now, selectedDayIndex);
   const date = vietnamScheduleDate(now);
   const timeline = useMemo(() => buildScheduleTimeline(day), [day]);
   const viewport = useRef(null);
@@ -18,7 +24,7 @@ export function SchedulePanel({ now: externalNow, visible = true, phase }) {
   const markerX = scheduleMarkerX(timeline, minute);
   const markerHidden =
     date !== day.date ||
-    !day.events.length ||
+    (!timeline.nina.length && !timeline.satellite.length) ||
     minute < timeline.startMinute ||
     minute > timeline.endMinute;
   useEffect(() => {
@@ -36,6 +42,7 @@ export function SchedulePanel({ now: externalNow, visible = true, phase }) {
       id="festival-schedule"
       hidden={!visible}
       data-phase={phase}
+      data-today={String(date === day.date)}
       aria-label={"VFCD schedule for " + day.weekday + ", " + day.date}
     >
       <header className="schedule-header">
@@ -96,11 +103,11 @@ export function SchedulePanel({ now: externalNow, visible = true, phase }) {
       </div>
       <a
         className="schedule-source sr-only"
-        href="https://vfcd.events/schedule/"
+        href={FESTIVAL_SCHEDULE.source}
         target="_blank"
         rel="noopener noreferrer"
       >
-        Full schedule
+        Schedule design
       </a>
       <span id="schedule-status" className="sr-only">
         {status}

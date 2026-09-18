@@ -60,7 +60,7 @@ function applySnapshot(context, snapshot) {
   if (node("festival-schedule"))
     node("festival-schedule").hidden = !snapshot.informationPanelVisible;
   if (snapshot.informationPanelVisible) {
-    const day = schedule.festivalDayAt(snapshot.now);
+    const day = schedule.festivalDayAt(snapshot.now, snapshot.selectedOverviewDay);
     text("schedule-weekday", day.weekday);
     text(
       "schedule-date",
@@ -72,12 +72,17 @@ function applySnapshot(context, snapshot) {
       }).format(new Date(day.date + "T00:00:00+07:00")),
     );
     const date = schedule.vietnamScheduleDate(snapshot.now);
+    attr("festival-schedule", "data-today", date === day.date);
     text(
       "schedule-status",
       date < day.date ? "Upcoming" : date > day.date ? "Festival ended" : "Today",
     );
     if (node("schedule-events"))
-      node("schedule-events").innerHTML = fixtures.scheduleMarkup(snapshot.now);
+      node("schedule-events").innerHTML = fixtures.scheduleMarkup(
+        snapshot.now,
+        true,
+        snapshot.selectedOverviewDay,
+      );
   }
 }
 exports.installContext = (context) => {

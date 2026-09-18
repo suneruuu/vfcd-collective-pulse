@@ -332,11 +332,13 @@ canvas {
   display: none;
 }
 
-#festival-schedule[data-phase]:not([data-phase="open"]) .schedule-live-icon {
+#festival-schedule[data-phase]:not([data-phase="open"]) .schedule-live-icon,
+#festival-schedule[data-today="false"] .schedule-live-icon {
   display: none;
 }
 
-#festival-schedule[data-phase]:not([data-phase="open"]) #schedule-weekday {
+#festival-schedule[data-phase]:not([data-phase="open"]) #schedule-weekday,
+#festival-schedule[data-today="false"] #schedule-weekday {
   left: calc(33 * var(--sx));
 }
 
@@ -465,7 +467,7 @@ canvas {
   position: absolute;
   left: calc(11 * var(--sx));
   top: calc(79 * var(--sy));
-  width: calc(435 * var(--sx));
+  width: calc(444 * var(--sx));
   height: calc(333 * var(--sy));
   overflow-x: hidden;
   overflow-y: auto;
@@ -526,9 +528,16 @@ canvas {
   line-height: calc(17 * var(--ui));
 }
 
+.schedule-event-bars {
+  position: relative;
+  height: calc(var(--bar-height) * var(--sy));
+}
+
 .schedule-event-bar {
-  width: 100%;
-  height: calc(6 * var(--sy));
+  position: absolute;
+  left: calc(var(--bar-offset) * var(--sx));
+  width: calc(var(--bar-width) * var(--sx));
+  height: calc(var(--bar-height) * var(--sy));
   border-radius: calc(3 * var(--ui));
   background: #a8a8a8;
 }
@@ -537,10 +546,10 @@ canvas {
   position: relative;
   left: calc(var(--label-offset) * var(--sx));
   width: calc(var(--label-width) * var(--sx));
-  display: flex;
+  display: grid;
+  grid-template-columns: calc(var(--title-offset) * var(--sx)) minmax(0, 1fr);
   align-items: baseline;
-  gap: calc(7 * var(--sx));
-  margin-top: calc(2 * var(--sy));
+  margin-top: calc(var(--caption-gap) * var(--sy));
 }
 
 .schedule-card-track {
@@ -554,6 +563,7 @@ canvas {
 }
 
 .schedule-card-title {
+  letter-spacing: calc(var(--title-tracking) * var(--ui));
   min-width: 0;
   margin: 0;
   color: rgb(255 255 255 / 50%);
@@ -561,7 +571,7 @@ canvas {
 }
 
 .schedule-card-location {
-  display: block;
+  display: inline;
   font-style: italic;
 }
 

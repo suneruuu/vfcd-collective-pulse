@@ -244,6 +244,35 @@ function navigationHelperChecks() {
   assert(!/id="navigation-helper"[^>]*inert=""/.test(open));
 }
 
+function overviewScheduleChecks() {
+  const { DISPLAY_SCHEDULE_DAYS, festivalDayAt } = load("src/schedule/domain.js");
+  const now = new Date(DISPLAY_SCHEDULE_DAYS[2].date + "T12:00:00+07:00").getTime();
+  const text = (markup, id) => markup.match(new RegExp('id="' + id + '"[^>]*>([^<]*)<'))?.[1];
+  const render = (selectedOverviewDay) =>
+    fixtures.installationMarkup({
+      now,
+      phase: "open",
+      active: true,
+      selectedOverviewDay,
+    });
+  for (const [dayIndex, day] of DISPLAY_SCHEDULE_DAYS.entries()) {
+    const markup = render(dayIndex);
+    assert.equal(text(markup, "schedule-weekday"), day.weekday);
+    assert(markup.includes('id="schedule-date" dateTime="' + day.date + '"'));
+    const firstVisible = day.events.find((event) => ![4, 5].includes(Number(event.track)));
+    assert(markup.includes(firstVisible.title.replaceAll("&", "&amp;")));
+    assert(!/class="schedule-card-track">Track [45]</.test(markup));
+    assert.equal(/id="schedule-now"[^>]*hidden=""/.test(markup), dayIndex !== 2);
+    assert(markup.includes('data-today="' + String(dayIndex === 2) + '"'));
+  }
+  const live = render(null);
+  assert.equal(text(live, "schedule-weekday"), "Wednesday");
+  assert(!/id="schedule-now"[^>]*hidden=""/.test(live));
+  for (const invalid of [-1, 7, 1.5, "0", NaN]) {
+    assert.equal(festivalDayAt(now, invalid), DISPLAY_SCHEDULE_DAYS[2]);
+  }
+}
+
 function reactChecks() {
   const collapsed = fixtures.installationMarkup({ navigationHelperVisible: false });
   assert(
@@ -306,6 +335,7 @@ function reactChecks() {
   await synchronizerChecks();
   reactChecks();
   navigationHelperChecks();
+  overviewScheduleChecks();
   console.log(
     "React component, isolated session, request cancellation, polling lifecycle, conflict, and stale response checks passed.",
   );

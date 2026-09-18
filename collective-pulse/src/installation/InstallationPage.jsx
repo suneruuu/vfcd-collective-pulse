@@ -24,6 +24,7 @@ export function InstallationShell({ snapshot = INITIAL_SNAPSHOT, invoke = () => 
         now={snapshot.now}
         visible={snapshot.informationPanelVisible}
         phase={snapshot.phase}
+        selectedDayIndex={snapshot.selectedOverviewDay}
       />
       <InstallationControls snapshot={snapshot} invoke={invoke} />
       <p id="vote-status" className="sr-only" aria-live="polite">

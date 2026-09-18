@@ -90,7 +90,7 @@ export function InstallationControls({ snapshot, invoke }) {
       </nav>
       <nav
         id="overview-days"
-        aria-label="Select a day's graph from the weekly overview"
+        aria-label="Select a day's graph and schedule from the weekly overview"
         hidden={!snapshot.informationPanelVisible || snapshot.before}
       >
         {Array.from(
@@ -102,7 +102,7 @@ export function InstallationControls({ snapshot, invoke }) {
               key={day}
               id={"overview-day-" + day}
               type="button"
-              aria-label={snapshot.dayLabels?.[day] || "View D" + (day + 1) + " graph"}
+              aria-label={snapshot.dayLabels?.[day] || "View D" + (day + 1) + " graph and schedule"}
               title={snapshot.dayLabels?.[day]}
               aria-pressed={snapshot.selectedOverviewDay === day}
               onClick={() => invoke("selectDay", day)}

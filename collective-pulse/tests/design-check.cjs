@@ -408,7 +408,9 @@ run("draw();");
 assert.equal(nodes["schedule-weekday"].textContent, "Wednesday");
 assert.equal(nodes["schedule-date"].textContent, "16 September 2026");
 assert.equal(nodes["schedule-status"].textContent, "Today");
-assert(nodes["schedule-events"].innerHTML.includes("VNx Panel | Learning Beyond Classroom"));
+assert(!nodes["schedule-events"].innerHTML.includes("VNx Panel | Learning Beyond Classroom"));
+assert(nodes["schedule-events"].innerHTML.includes("Short Film Session"));
+assert(!nodes["schedule-events"].innerHTML.includes("Cholon Urban Walk"));
 assert.equal(run("getCampaignTiming(Date.now()).displayDayIndex"), 2);
 
 // Explicit CSS geometry for all three timed Figma screens, not browser QA.
@@ -757,6 +759,11 @@ for (const [w, h] of [
     events.length = 0;
     run("draw();");
     assert.equal(run("selectedOverviewDay"), day);
+    assert.equal(
+      nodes["schedule-weekday"].textContent,
+      ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][day],
+    );
+    assert.equal(nodes["schedule-date"].textContent, `${14 + day} September 2026`);
     assert.equal(run("viewedDayIndex"), day);
     assert.equal(run("getGraphTiming(getCampaignTiming(Date.now())).displayDayIndex"), day);
     assert.equal(run("getGraphTiming(getCampaignTiming(Date.now())).active"), false);
@@ -784,7 +791,7 @@ for (const [w, h] of [
     }
     assert.equal(
       nodes[`overview-day-${day}`].attributes["aria-label"],
-      `View D${day + 1}, ${String(14 + day).padStart(2, "0")}/09/2026 graph`,
+      `View D${day + 1}, ${String(14 + day).padStart(2, "0")}/09/2026 graph and schedule`,
     );
     const dailyBars = events
       .filter((event) => event.type === "rect" && event.args[0] < 1465 * sx)
@@ -858,8 +865,8 @@ assert.equal(nodes["navigation-helper"].attributes["data-visible"], "true");
 assert.equal(nodes["navigation-helper"].inert, false);
 assert.equal(nodes["overview-days"].hidden, false);
 
-// Reading Monday/Tuesday during Wednesday's opening hours cannot redirect
-// responses or the schedule, and a fresh future day must show an empty graph.
+// The calendar follows the selected day while responses still belong to today.
+// A fresh future day must show its calendar and an empty graph.
 context.width = 1920;
 context.height = 1080;
 testNow = new Date("2026-09-16T12:00:00+07:00").getTime();
@@ -887,8 +894,9 @@ for (const day of [0, 1]) {
     .slice(1);
   assert(dailyBars.every((event) => event.args[3] === (day === 0 ? 34 : 51)));
   assert.equal(run("getCampaignTiming(Date.now()).activeDayIndex"), 2);
-  assert.equal(nodes["schedule-weekday"].textContent, "Wednesday");
-  assert.equal(nodes["schedule-date"].textContent, "16 September 2026");
+  assert.equal(nodes["schedule-weekday"].textContent, day === 0 ? "Monday" : "Tuesday");
+  assert.equal(nodes["schedule-date"].textContent, `${14 + day} September 2026`);
+  assert.equal(nodes["festival-schedule"].attributes["data-today"], "false");
 }
 const historicalVotes = run("JSON.stringify(state.votes.slice(0, 5))");
 run("fitAll = false; followLive = false; viewStartSecond = 43199;");
@@ -907,6 +915,9 @@ run("draw();");
 assert.equal(run("getGraphTiming(getCampaignTiming(Date.now())).displayDayIndex"), 6);
 assert.equal(run("getGraphTiming(getCampaignTiming(Date.now())).liveSecond"), 32400);
 assert.equal(run("derived.days[6].total"), 0);
+assert.equal(nodes["schedule-weekday"].textContent, "Sunday");
+assert.equal(nodes["schedule-date"].textContent, "20 September 2026");
+assert.equal(nodes["schedule-status"].textContent, "Upcoming");
 assert(
   !events.some((event) => event.type === "rect" && event.args[0] < 1465),
   "a future empty day cannot show current or historical votes",
@@ -918,6 +929,9 @@ assert.equal(run("getGraphTiming(getCampaignTiming(Date.now())).displayDayIndex"
 assert.equal(run("fitAll"), false);
 assert.equal(run("followLive"), true);
 assert.equal(nodes["view-live"].attributes["aria-pressed"], "true");
+assert.equal(nodes["schedule-weekday"].textContent, "Wednesday");
+assert.equal(nodes["schedule-date"].textContent, "16 September 2026");
+assert.equal(nodes["festival-schedule"].attributes["data-today"], "true");
 assert(
   Array.from(
     { length: 7 },

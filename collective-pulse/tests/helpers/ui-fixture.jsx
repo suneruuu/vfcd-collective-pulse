@@ -6,8 +6,10 @@ import { SchedulePanel } from "../../src/schedule/SchedulePanel.jsx";
 import { PromptManagerShell } from "../../src/prompts/PromptManagerPage.jsx";
 export const installationMarkup = (snapshot) =>
   renderToStaticMarkup(<InstallationShell snapshot={{ ...INITIAL_SNAPSHOT, ...snapshot }} />);
-export const scheduleMarkup = (now, visible = true) =>
-  renderToStaticMarkup(<SchedulePanel now={now} visible={visible} />);
+export const scheduleMarkup = (now, visible = true, selectedDayIndex = null) =>
+  renderToStaticMarkup(
+    <SchedulePanel now={now} visible={visible} selectedDayIndex={selectedDayIndex} />,
+  );
 export const timelineMarkup = (timeline) =>
   renderToStaticMarkup(<ScheduleAgenda timeline={timeline} />);
 export const scheduleCardMarkup = (event) => renderToStaticMarkup(<ScheduleCard event={event} />);
