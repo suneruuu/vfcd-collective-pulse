@@ -49,6 +49,34 @@ canvas {
   pointer-events: none;
 }
 
+#view-controls[data-helper-visible="true"] {
+  pointer-events: auto;
+}
+
+#navigation-helper {
+  position: absolute;
+  inset: 0;
+  opacity: 1;
+  transform: translateX(0);
+  visibility: visible;
+  transition:
+    opacity 240ms ease,
+    transform 240ms ease,
+    visibility 0s;
+}
+
+#navigation-helper[data-visible="false"] {
+  opacity: 0;
+  transform: translateX(calc(16 * var(--sx)));
+  visibility: hidden;
+  transition-delay: 0s, 0s, 240ms;
+}
+
+#navigation-helper[data-visible="false"],
+#navigation-helper[data-visible="false"] button {
+  pointer-events: none;
+}
+
 #view-controls button {
   position: absolute;
   top: 0;
@@ -156,6 +184,14 @@ canvas {
   inset: 0;
   width: calc(21 * var(--sx));
   height: calc(33 * var(--sy));
+  transition: transform 240ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #navigation-helper,
+  #panel-toggle img {
+    transition: none;
+  }
 }
 
 #panel-toggle[aria-expanded="false"] img {

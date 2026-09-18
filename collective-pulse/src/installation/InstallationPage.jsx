@@ -6,6 +6,7 @@ import { SchedulePanel } from "../schedule/SchedulePanel.jsx";
 export const INITIAL_SNAPSHOT = {
   now: Date.now(),
   informationPanelVisible: true,
+  navigationHelperVisible: true,
   before: false,
   active: false,
   phase: "before-event",

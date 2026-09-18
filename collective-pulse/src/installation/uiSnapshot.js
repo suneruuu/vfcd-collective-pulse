@@ -6,6 +6,7 @@ export function getUiSnapshot(runtime, timing, now, layout, formatting) {
     before: timing.before,
     active: timing.active,
     informationPanelVisible: runtime.informationPanelVisible,
+    navigationHelperVisible: runtime.navigationHelperVisible,
     followLive: runtime.selectedOverviewDay === null && !runtime.fitAll && runtime.followLive,
     fitAll: runtime.fitAll,
     selectedOverviewDay: runtime.selectedOverviewDay,

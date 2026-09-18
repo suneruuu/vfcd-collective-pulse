@@ -59,22 +59,24 @@ export function createCanvasInput(
     }
     if (!campaignTiming.active && !runtime.pulsePreview) return true;
     const timing = camera.getGraphTiming(campaignTiming);
-    const controls = viewport.viewControlRects(layout);
-    if (viewport.pointInRect(p.mouseX, p.mouseY, controls.fitAll)) {
-      camera.activateFitAll();
-      return false;
-    }
-    if (viewport.pointInRect(p.mouseX, p.mouseY, controls.live)) {
-      camera.activateLiveView();
-      return false;
-    }
-    if (viewport.pointInRect(p.mouseX, p.mouseY, controls.zoomOut)) {
-      camera.zoomTimeline(1 / CONFIG.ZOOM_FACTOR, layout, timing);
-      return false;
-    }
-    if (viewport.pointInRect(p.mouseX, p.mouseY, controls.zoomIn)) {
-      camera.zoomTimeline(CONFIG.ZOOM_FACTOR, layout, timing);
-      return false;
+    if (runtime.navigationHelperVisible) {
+      const controls = viewport.viewControlRects(layout);
+      if (viewport.pointInRect(p.mouseX, p.mouseY, controls.fitAll)) {
+        camera.activateFitAll();
+        return false;
+      }
+      if (viewport.pointInRect(p.mouseX, p.mouseY, controls.live)) {
+        camera.activateLiveView();
+        return false;
+      }
+      if (viewport.pointInRect(p.mouseX, p.mouseY, controls.zoomOut)) {
+        camera.zoomTimeline(1 / CONFIG.ZOOM_FACTOR, layout, timing);
+        return false;
+      }
+      if (viewport.pointInRect(p.mouseX, p.mouseY, controls.zoomIn)) {
+        camera.zoomTimeline(CONFIG.ZOOM_FACTOR, layout, timing);
+        return false;
+      }
     }
     if (viewport.pointInRect(p.mouseX, p.mouseY, layout.graph)) {
       runtime.fitAll = false;

@@ -33,6 +33,7 @@ export const CONFIG = Object.freeze({
   SECOND_WIDTH: 28,
   MAX_SECOND_WIDTH: 224,
   ZOOM_FACTOR: 1.5,
+  NAVIGATION_HELPER_IDLE_MS: 60 * 1000,
   // Legacy storage versions are removed. Date-keyed v4 sessions are kept
   // across reloads and when switching between testing and the event week.
   STORAGE_KEY: "collective_pulse_v4",

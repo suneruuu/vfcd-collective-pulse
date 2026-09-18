@@ -194,7 +194,71 @@ async function synchronizerChecks() {
   sync.stop();
   assert.equal(timers.timers.size, 0);
 }
+function navigationHelperChecks() {
+  let now = 10_000;
+  const clock = { now: () => now };
+  const engine = createInstallation({ p: {}, storage: {}, clock });
+  const { runtime, actions, navigationHelper } = engine;
+  const advance = (milliseconds) => {
+    now += milliseconds;
+    navigationHelper.update();
+  };
+  advance(59_999);
+  assert.equal(runtime.navigationHelperVisible, true);
+  advance(1);
+  assert.equal(runtime.navigationHelperVisible, false, "The helper closes after one idle minute");
+  assert.equal(runtime.informationPanelVisible, true);
+
+  actions.toggleNavigationHelper();
+  advance(50_000);
+  actions.interactNavigationHelper();
+  advance(59_999);
+  assert.equal(runtime.navigationHelperVisible, true, "Interaction starts a fresh idle minute");
+  advance(1);
+  assert.equal(runtime.navigationHelperVisible, false);
+
+  actions.toggleNavigationHelper();
+  actions.setNavigationHelperHovered(true);
+  advance(180_000);
+  assert.equal(runtime.navigationHelperVisible, true, "A stationary hover keeps the helper open");
+  actions.setNavigationHelperHovered(false);
+  advance(59_999);
+  assert.equal(
+    runtime.navigationHelperVisible,
+    true,
+    "Leaving the helper starts a fresh idle minute",
+  );
+  advance(1);
+  assert.equal(runtime.navigationHelperVisible, false);
+
+  actions.toggleNavigationHelper();
+  advance(59_999);
+  assert.equal(runtime.navigationHelperVisible, true, "Reopening resets the idle timer");
+  actions.toggleNavigationHelper();
+  actions.interactNavigationHelper();
+  advance(60_000);
+  assert.equal(runtime.navigationHelperVisible, false, "Interaction cannot reopen a closed helper");
+
+  const open = fixtures.installationMarkup({ navigationHelperVisible: true });
+  assert(/id="navigation-helper"[^>]*data-visible="true"[^>]*aria-hidden="false"/.test(open));
+  assert(!/id="navigation-helper"[^>]*inert=""/.test(open));
+}
+
 function reactChecks() {
+  const collapsed = fixtures.installationMarkup({ navigationHelperVisible: false });
+  assert(
+    /id="navigation-helper"[^>]*data-visible="false"[^>]*aria-hidden="true"[^>]*inert=""/.test(
+      collapsed,
+    ),
+  );
+  assert(!/id="navigation-helper"[^>]*hidden=""/.test(collapsed));
+  assert(
+    /id="panel-toggle"[^>]*aria-controls="navigation-helper"[^>]*aria-expanded="false"/.test(
+      collapsed,
+    ),
+  );
+  assert(!/id="festival-schedule"[^>]*hidden=""/.test(collapsed));
+  assert(!/id="overview-days"[^>]*hidden=""/.test(collapsed));
   const queue = document(4);
   queue.prompts[0].text = "<script>alert(1)</script> & question";
   queue.prompts[1].hidden = true;
@@ -241,6 +305,7 @@ function reactChecks() {
   await managerChecks();
   await synchronizerChecks();
   reactChecks();
+  navigationHelperChecks();
   console.log(
     "React component, isolated session, request cancellation, polling lifecycle, conflict, and stale response checks passed.",
   );

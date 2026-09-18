@@ -35,14 +35,19 @@ function applySnapshot(context, snapshot) {
   );
   attr("view-controls", "data-waiting", !snapshot.active && !snapshot.pulsePreview);
   attr("view-controls", "data-phase", snapshot.phase);
+  attr("view-controls", "data-helper-visible", snapshot.navigationHelperVisible);
   attr("festival-schedule", "data-phase", snapshot.phase);
   attr("view-live", "aria-pressed", snapshot.followLive);
   attr("view-fit", "aria-pressed", snapshot.fitAll);
-  attr("panel-toggle", "aria-expanded", snapshot.informationPanelVisible);
+  attr("navigation-helper", "data-visible", snapshot.navigationHelperVisible);
+  attr("navigation-helper", "aria-hidden", !snapshot.navigationHelperVisible);
+  if (node("navigation-helper"))
+    node("navigation-helper").inert = !snapshot.navigationHelperVisible;
+  attr("panel-toggle", "aria-expanded", snapshot.navigationHelperVisible);
   attr(
     "panel-toggle",
     "aria-label",
-    snapshot.informationPanelVisible ? "Hide information panel" : "Show information panel",
+    snapshot.navigationHelperVisible ? "Hide navigation helper" : "Show navigation helper",
   );
   if (node("overview-days"))
     node("overview-days").hidden = !snapshot.informationPanelVisible || snapshot.before;
@@ -114,7 +119,7 @@ exports.installContext = (context) => {
       "view-zoom-out": "zoomOut",
       "view-live": "live",
       "view-fit": "fit",
-      "panel-toggle": "togglePanel",
+      "panel-toggle": "toggleNavigationHelper",
       "view-pulse": "togglePreview",
     };
     for (const [id, action] of Object.entries(handlers))

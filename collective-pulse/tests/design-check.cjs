@@ -352,13 +352,34 @@ context.mouseY = 400;
 assert.equal(run("mouseWheel({ deltaY: -100 })"), false);
 assert.equal(run("zoomSecondWidth"), previousZoom * run("CONFIG.ZOOM_FACTOR"));
 nodes["panel-toggle"].handlers.click();
-assert.equal(run("getLayout().graph.w"), 1826);
+assert.equal(run("getLayout().graph.w"), 1371);
+events.length = 0;
 run("draw();");
-assert.equal(nodes["festival-schedule"].hidden, true);
+assert.equal(nodes["navigation-helper"].attributes["data-visible"], "false");
+assert.equal(nodes["navigation-helper"].inert, true);
+assert.equal(nodes["panel-toggle"].attributes["aria-expanded"], "false");
+assert.equal(nodes["panel-toggle"].attributes["aria-label"], "Show navigation helper");
+assert.equal(nodes["festival-schedule"].hidden, false);
+assert.equal(nodes["overview-days"].hidden, false);
+assert(events.some((event) => event.value === "COLLECTIVE PULSE"));
+assert(events.some((event) => event.value === "OVERVIEW"));
+const collapsedZoom = run("zoomSecondWidth");
+context.mouseX = 1210;
+context.mouseY = 40;
+assert.equal(run("mousePressed()"), true);
+assert.equal(run("zoomSecondWidth"), collapsedZoom, "Hidden zoom controls must not respond");
 nodes["panel-toggle"].handlers.click();
 assert.equal(run("getLayout().graph.w"), 1371);
 run("draw();");
+assert.equal(nodes["navigation-helper"].attributes["data-visible"], "true");
+assert.equal(nodes["navigation-helper"].inert, false);
+assert.equal(nodes["panel-toggle"].attributes["aria-expanded"], "true");
+assert.equal(nodes["panel-toggle"].attributes["aria-label"], "Hide navigation helper");
 assert.equal(nodes["festival-schedule"].hidden, false);
+assert.equal(run("mousePressed()"), false);
+assert.equal(run("zoomSecondWidth"), collapsedZoom * run("CONFIG.ZOOM_FACTOR"));
+context.mouseX = 300;
+context.mouseY = 400;
 
 context.width = 960;
 context.height = 540;
@@ -622,13 +643,18 @@ assert.equal(
   "hidden graph navigation must not respond under the blur",
 );
 
+run("navigationHelperVisible = true; navigationHelperLastInteractionAt = Date.now();");
 nodes["panel-toggle"].handlers.click();
 run("draw();");
-assert.equal(nodes["festival-schedule"].hidden, true);
-assert.equal(nodes["campaign-screen"].style.values["--main-width"], "1920px");
-assert.equal(cssNumber("#campaign-screen", "width", 1920, 1080, 1920), 1920);
+assert.equal(nodes["navigation-helper"].attributes["data-visible"], "false");
+assert.equal(nodes["navigation-helper"].inert, true);
+assert.equal(nodes["festival-schedule"].hidden, false);
+assert.equal(nodes["campaign-screen"].style.values["--main-width"], "1465px");
+assert.equal(cssNumber("#campaign-screen", "width", 1920, 1080, 1465), 1465);
 nodes["panel-toggle"].handlers.click();
 run("draw();");
+assert.equal(nodes["navigation-helper"].attributes["data-visible"], "true");
+assert.equal(nodes["navigation-helper"].inert, false);
 assert.equal(nodes["festival-schedule"].hidden, false);
 
 testNow = new Date("2026-09-17T02:00:00+07:00").getTime();
@@ -812,13 +838,22 @@ for (const invalid of [-1, 7, 1.5, "NaN"]) {
   assert.equal(run(`selectOverviewDay(${invalid})`), false);
   assert.equal(run("selectedOverviewDay"), 2);
 }
+run("navigationHelperVisible = true; navigationHelperLastInteractionAt = Date.now();");
 nodes["panel-toggle"].handlers.click();
 run("draw();");
-assert.equal(nodes["overview-days"].hidden, true);
-assert.equal(run("overviewDayAtPoint(getLayout(), 1500, 900)"), null);
-assert.equal(run("selectOverviewDay(0)"), false);
+assert.equal(nodes["navigation-helper"].attributes["data-visible"], "false");
+assert.equal(nodes["navigation-helper"].inert, true);
+assert.equal(nodes["overview-days"].hidden, false);
+assert.equal(
+  run("overviewDayAtPoint(getLayout(), getLayout().overview.x + 1, 900 * getLayout().sy)"),
+  0,
+);
+assert.equal(run("selectedOverviewDay"), 2);
+assert.equal(run("selectOverviewDay(2)"), true);
 nodes["panel-toggle"].handlers.click();
 run("draw();");
+assert.equal(nodes["navigation-helper"].attributes["data-visible"], "true");
+assert.equal(nodes["navigation-helper"].inert, false);
 assert.equal(nodes["overview-days"].hidden, false);
 
 // Reading Monday/Tuesday during Wednesday's opening hours cannot redirect
@@ -917,6 +952,20 @@ run("draw();");
 assert.equal(nodes["overview-days"].hidden, true);
 assert.equal(run("selectOverviewDay(0)"), false);
 assert.equal(run("overviewDayAtPoint(getLayout(), 1500, 900)"), null);
+// Inactivity is checked by the draw loop, including after reopening.
+run(
+  "navigationHelperVisible = true; navigationHelperHovered = false; navigationHelperLastInteractionAt = Date.now();",
+);
+testNow += 59_999;
+run("draw();");
+assert.equal(nodes["navigation-helper"].attributes["data-visible"], "true");
+testNow += 1;
+run("draw();");
+assert.equal(nodes["navigation-helper"].attributes["data-visible"], "false");
+assert.equal(nodes["navigation-helper"].inert, true);
+assert.equal(nodes["panel-toggle"].attributes["aria-expanded"], "false");
+assert.equal(nodes["festival-schedule"].hidden, false);
+
 console.log(
   "Collective Pulse Figma layout, exported assets, drawing, controls, and seven-day graph selection checks passed.",
 );
