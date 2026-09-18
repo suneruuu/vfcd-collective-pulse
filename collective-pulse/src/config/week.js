@@ -1,6 +1,5 @@
-// Shared voting/calendar week. Test week: 14–20 September 2026.
-// Change START_DATE to "2026-09-21" for the real VFCD festival week.
+// Production week. Tests inject their own start date through the module loader.
 export const INSTALLATION_WEEK = Object.freeze({
-  START_DATE: "2026-09-14",
+  START_DATE: (import.meta.env || {}).VITE_CAMPAIGN_START_DATE || "2026-09-21",
   DAYS: 7,
 });

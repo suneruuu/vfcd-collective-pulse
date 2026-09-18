@@ -1,15 +1,27 @@
 import { CONFIG, YES, NO } from "../../config/installation.js";
 export function createVoteSampler(
   runtime,
-  { campaign, onVotes, persistence, voting, clock = Date },
+  {
+    campaign,
+    onVotes,
+    persistence,
+    voting,
+    clock = Date,
+    submitVotes = null,
+    canVote = () => true,
+  },
 ) {
   function recordVote(choice, now = clock.now()) {
     return recordVotes([choice], now);
   }
   function recordVotes(choices, now = clock.now()) {
     const timing = campaign.getCampaignTiming(now);
-    if (!timing.active || choices.length === 0) return false;
+    if (!timing.active || !canVote() || choices.length === 0) return false;
     if (!choices.every((choice) => choice === YES || choice === NO)) return false;
+    if (submitVotes) {
+      void submitVotes(choices.slice(0, 256));
+      return true;
+    }
 
     // All responses in this sample share one timestamp. Rebuild and save once
     // for the whole batch, rather than repeatedly for every concurrent press.
@@ -31,6 +43,10 @@ export function createVoteSampler(
     runtime.lastSampleClock = now;
   }
   function updateInputSampling(now = clock.now()) {
+    if (!canVote()) {
+      resetInputSampling(now);
+      return;
+    }
     const intervalsPassed = Math.floor((now - runtime.lastSampleClock) / CONFIG.INPUT_SAMPLE_MS);
     if (intervalsPassed < 1) {
       if (!campaign.getCampaignTiming(now).active) resetInputSampling(now);
@@ -42,7 +58,8 @@ export function createVoteSampler(
     }
 
     // Bound catch-up work just as in program 2 so a slow frame stays responsive.
-    const sampleCount = Math.min(intervalsPassed, 240);
+    const sampleCount = submitVotes ? 1 : Math.min(intervalsPassed, 240);
+    if (submitVotes && intervalsPassed > 1) runtime.lastSampleClock = now - CONFIG.INPUT_SAMPLE_MS;
     for (let i = 0; i < sampleCount; i++) {
       runtime.lastSampleClock += CONFIG.INPUT_SAMPLE_MS;
       if (!campaign.getCampaignTiming(runtime.lastSampleClock).active) {
@@ -62,7 +79,7 @@ export function createVoteSampler(
   function queueDirection(direction, now = clock.now()) {
     // Finish elapsed samples before applying a newly pressed direction.
     updateInputSampling(now);
-    if (!campaign.getCampaignTiming(now).active) return false;
+    if (!campaign.getCampaignTiming(now).active || !canVote()) return false;
     if (direction !== YES && direction !== NO) return false;
     runtime.pendingVotes.push(direction);
     runtime.heldDirections.add(direction);

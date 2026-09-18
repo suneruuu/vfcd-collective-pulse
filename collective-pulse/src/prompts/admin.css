@@ -1,0 +1,54 @@
+body.admin-page {
+  touch-action: auto;
+}
+.admin-screen {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: #fff;
+}
+.admin-form {
+  width: min(100%, 380px);
+}
+.admin-form h1 {
+  font-size: 32px;
+  font-weight: 400;
+  margin: 16px 0 32px;
+}
+.admin-form label {
+  display: grid;
+  gap: 8px;
+  margin: 20px 0;
+}
+.admin-form input {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #777;
+  background: #111;
+  color: #fff;
+  font: inherit;
+}
+.admin-form button,
+.admin-signout {
+  padding: 12px 20px;
+  border: 1px solid #fff;
+  background: #000;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.admin-form button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.admin-form [role="alert"] {
+  color: #ff6d05;
+}
+.admin-signout {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 30;
+  font-size: 14px;
+}

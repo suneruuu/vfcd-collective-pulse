@@ -1,9 +1,6 @@
-export class ApiError extends Error {
-  constructor(message, status) {
-    super(message);
-    this.status = status;
-  }
-}
+import { ApiError } from "./apiError.js";
+import { cloudApi, cloudEnabled } from "./cloudApi.js";
+export { ApiError } from "./apiError.js";
 export function createPromptApi(fetcher = (...args) => fetch(...args)) {
   async function request(url, body, signal) {
     const options = {
@@ -47,4 +44,4 @@ export function createPromptApi(fetcher = (...args) => fetch(...args)) {
     reportRuntime: (body, signal) => request("/api/runtime", body, signal),
   };
 }
-export const promptApi = createPromptApi();
+export const promptApi = cloudEnabled ? cloudApi : createPromptApi();

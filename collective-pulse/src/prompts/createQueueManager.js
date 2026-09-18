@@ -79,7 +79,7 @@ export function createQueueManager(api, scheduler = globalThis) {
       publish({
         queue,
         connected: true,
-        message: "Saved on the installation computer.",
+        message: api.cloud ? "Saved online." : "Saved on the installation computer.",
         error: false,
       });
       return true;

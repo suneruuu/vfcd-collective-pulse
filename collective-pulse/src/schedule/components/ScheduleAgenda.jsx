@@ -1,3 +1,4 @@
+import { assetUrl } from "../../services/paths.js";
 import { ScheduleCard } from "./ScheduleCard.jsx";
 
 export function ScheduleAgenda({ timeline }) {
@@ -13,7 +14,7 @@ export function ScheduleAgenda({ timeline }) {
       </section>
       <img
         className="schedule-venue-rule"
-        src="/assets/schedule-venue-rule.svg"
+        src={assetUrl("schedule-venue-rule.svg")}
         width="435"
         height="2"
         alt=""

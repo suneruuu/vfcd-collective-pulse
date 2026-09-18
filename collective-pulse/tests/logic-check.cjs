@@ -97,8 +97,8 @@ const checks = `
   localStorage.setItem("unrelated_app", "keep");
   localStorage.setItem("p5_12hour_input_wave_second_resolution_v2", "reference sketch data");
   localStorage.setItem(storageKey(), "current");
-  localStorage.setItem("collective_pulse_v4:2026-09-16", "previous saved session");
-  localStorage.setItem("collective_pulse_v4:2026-09-21", "event week saved session");
+  localStorage.setItem(CONFIG.STORAGE_KEY + ":2026-09-16", "previous saved session");
+  localStorage.setItem(CONFIG.STORAGE_KEY + ":2026-09-21", "event week saved session");
   clearLegacyCampaignStorage();
   assert(localStorage.getItem("collective_pulse_v1:old") === null, "legacy campaign data must be cleared");
   assert(localStorage.getItem("collective_pulse_v2:" + CONFIG.CAMPAIGN_START_DATE) === null, "the previously active campaign's saved votes and prompts must be removed");
@@ -106,8 +106,8 @@ const checks = `
   assert(localStorage.getItem("unrelated_app") === "keep", "clearing Collective Pulse must not affect unrelated browser data");
   assert(localStorage.getItem("p5_12hour_input_wave_second_resolution_v2") === "reference sketch data", "the program 2 reference sketch's saved data must be preserved");
   assert(localStorage.getItem(storageKey()) === "current", "the active campaign namespace must be retained");
-  assert(localStorage.getItem("collective_pulse_v4:2026-09-16") === "previous saved session", "shifting the testing start must preserve the previous saved session");
-  assert(localStorage.getItem("collective_pulse_v4:2026-09-21") === "event week saved session", "switching weeks must preserve the event week saved session");
+  assert(localStorage.getItem(CONFIG.STORAGE_KEY + ":2026-09-16") === "previous saved session", "shifting the testing start must preserve the previous saved session");
+  assert(localStorage.getItem(CONFIG.STORAGE_KEY + ":2026-09-21") === "event week saved session", "switching weeks must preserve the event week saved session");
   localStorage.removeItem(storageKey());
   assert(loadState().votes.length === 0, "loading after the reset must show zero responses");
   state = createEmptyState();

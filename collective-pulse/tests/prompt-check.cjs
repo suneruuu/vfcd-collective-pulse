@@ -44,7 +44,7 @@ async function main() {
   ({ createInstallationServer } = await import("../server.js"));
   await start();
   let document = await get();
-  assert.equal(document.prompts.length, 12);
+  assert.equal(document.prompts.length, Queue.defaults.length);
   assert.equal(document.installation.online, false);
   assert.equal((await fetch(base + "/prompts")).status, 200);
   assert.equal((await fetch(base + "/prompts/")).status, 200);
@@ -78,7 +78,7 @@ async function main() {
     409,
   );
   assert.equal(
-    (await post("/api/prompts", { revision: 0, operation: "edit", id: "default-1", text: " " }))
+    (await post("/api/prompts", { revision: 0, operation: "edit", id: "default-13", text: " " }))
       .status,
     400,
   );
@@ -87,7 +87,7 @@ async function main() {
       await post("/api/prompts", {
         revision: 0,
         operation: "edit",
-        id: "default-1",
+        id: "default-13",
         text: "x".repeat(241),
       })
     ).status,
@@ -98,7 +98,7 @@ async function main() {
       await post("/api/prompts", {
         revision: 0,
         operation: "visibility",
-        id: "default-1",
+        id: "default-13",
         hidden: "false",
       })
     ).status,
@@ -109,7 +109,7 @@ async function main() {
       await post("/api/prompts", {
         revision: 0,
         operation: "reorder",
-        ids: Array(12).fill("default-1"),
+        ids: Array(Queue.defaults.length).fill("default-13"),
       })
     ).status,
     400,
@@ -139,7 +139,7 @@ async function main() {
   let edited = await post("/api/prompts", {
     revision: 0,
     operation: "edit",
-    id: "default-1",
+    id: "default-13",
     text: unicode,
   });
   assert.equal(edited.status, 200);
@@ -150,7 +150,7 @@ async function main() {
       await post("/api/prompts", {
         revision: 0,
         operation: "edit",
-        id: "default-2",
+        id: "default-14",
         text: "Stale edit",
       })
     ).status,
@@ -158,8 +158,8 @@ async function main() {
   );
   const heartbeat = {
     revision: 1,
-    currentId: "default-1",
-    nextId: "default-2",
+    currentId: "default-13",
+    nextId: "default-14",
     active: true,
     campaignStartDate: "2026-09-14",
   };
@@ -200,7 +200,7 @@ async function main() {
   let hidden = await post("/api/prompts", {
     revision: 3,
     operation: "visibility",
-    id: "default-1",
+    id: "default-13",
     hidden: true,
   });
   assert.equal(hidden.status, 200);
@@ -296,7 +296,7 @@ async function checkDisplay() {
   );
   const votes = copy("state.votes");
   run("appendPrompt(campaignStartMs + 43200000); appendPrompt(campaignStartMs + 43500000);");
-  assert.equal(run("state.prompts.currentId"), "default-2");
+  assert.equal(run("state.prompts.currentId"), "default-14");
   const queue = {
     version: 1,
     revision: 1,
@@ -324,7 +324,7 @@ async function checkDisplay() {
   run("appendPrompt(campaignStartMs + 44100000);");
   assert.equal(
     run("state.prompts.currentId"),
-    "default-2",
+    "default-14",
     "Continue after the hidden current question in reordered loop",
   );
   queue.prompts.forEach((prompt) => {
@@ -341,7 +341,11 @@ async function checkDisplay() {
   run(
     "saveState(); managedPrompts = PromptQueue.defaults.map(p => ({...p})); restorePromptQueueCache(); state = loadState();",
   );
-  assert.equal(run("managedPrompts.length"), 13, "Offline reload uses cached managed queue");
+  assert.equal(
+    run("managedPrompts.length"),
+    Queue.defaults.length + 1,
+    "Offline reload uses cached managed queue",
+  );
   assert.deepEqual(copy("state.votes"), votes);
   const blank = { version: 1, revision: 10, prompts: [] };
   run("applyPromptQueue(" + JSON.stringify(blank) + "); saveState(); state = loadState();");
@@ -369,7 +373,7 @@ async function checkDisplay() {
   run(
     "state = createEmptyState(); state.prompts.visible = [[1, campaignStartMs + 43200000]]; delete state.prompts.queueIds; state.prompts.currentId = null; saveState(); state = loadState();",
   );
-  assert.equal(run("managedPrompts[state.prompts.visible[0][0]].id"), "default-2");
+  assert.equal(run("managedPrompts[state.prompts.visible[0][0]].id"), "default-14");
   run("state.votes = [[campaignStartMs + 43200000, YES]];");
   await run("syncPromptQueue();");
   assert.equal(run("promptQueueRevision"), 6, "Display fetches the actual persisted service queue");

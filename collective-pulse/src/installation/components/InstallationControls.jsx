@@ -1,5 +1,6 @@
+import { assetUrl } from "../../services/paths.js";
 import { CONFIG } from "../../config/installation.js";
-const Icon = ({ name, ...props }) => <img src={"/assets/" + name + ".svg"} alt="" {...props} />;
+const Icon = ({ name, ...props }) => <img src={assetUrl(name + ".svg")} alt="" {...props} />;
 export function InstallationControls({ snapshot, invoke }) {
   return (
     <>

@@ -277,11 +277,11 @@ assert.equal(rules.length, 5);
 assert.deepEqual(
   rules.map((event) => event.source),
   [
-    "assets/prompt-40.svg",
-    "assets/prompt-40.svg",
-    "assets/prompt-50.svg",
-    "assets/prompt-60.svg",
-    "assets/prompt-100.svg",
+    "/assets/prompt-40.svg",
+    "/assets/prompt-40.svg",
+    "/assets/prompt-50.svg",
+    "/assets/prompt-60.svg",
+    "/assets/prompt-100.svg",
   ],
 );
 for (const rule of rules) {
@@ -502,7 +502,7 @@ for (const [w, h] of [
   );
   const waitingImages = events.filter((event) => event.type === "image");
   assert.equal(waitingImages.length, 1);
-  assert.equal(waitingImages[0].source, "assets/panel-rule.svg");
+  assert.equal(waitingImages[0].source, "/assets/panel-rule.svg");
   assert.deepEqual(waitingImages[0].args, [1498 * sx, 676 * sy, 389 * sx, sy]);
   assert.equal(
     run("queueDirection(YES, Date.now())"),
@@ -546,9 +546,9 @@ for (const [w, h] of [
     events.some((event) => event.type === "rect" && event.args[3] === 17 * ui),
     "the earlier day's actual vote must remain drawn behind the blur",
   );
-  assert(events.some((event) => event.source === "assets/overview-cursor.svg"));
+  assert(events.some((event) => event.source === "/assets/overview-cursor.svg"));
   assert.equal(
-    events.filter((event) => event.source === "assets/overview-day-rule.svg").length,
+    events.filter((event) => event.source === "/assets/overview-day-rule.svg").length,
     6,
     "all seven days must remain separated while voting is closed",
   );
@@ -822,10 +822,10 @@ for (const [w, h] of [
       "every selected day must use the same zero reference",
     );
     assert(
-      !events.some((event) => event.source === "assets/live-cursor.svg"),
+      !events.some((event) => event.source === "/assets/live-cursor.svg"),
       "historical graphs must not pretend to be live",
     );
-    assert(events.some((event) => event.source === "assets/overview-cursor.svg"));
+    assert(events.some((event) => event.source === "/assets/overview-cursor.svg"));
     assert.equal(events.filter((event) => /^D[1-7]$/.test(event.value)).length, 7);
     const selectedX = overview.x + (day * overview.w) / 7;
     assert(

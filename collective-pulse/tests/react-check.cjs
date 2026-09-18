@@ -11,7 +11,7 @@ const document = (revision) => ({
   version: 1,
   revision,
   prompts: Queue.defaults.map((prompt) => ({ ...prompt })),
-  installation: { online: true, revision, currentId: "default-1", active: true },
+  installation: { online: true, revision, currentId: "default-13", active: true },
 });
 function deferred() {
   let resolve, reject;
@@ -51,7 +51,7 @@ async function managerChecks() {
   const stale = deferred();
   get = () => stale.promise;
   const poll = manager.refresh();
-  assert(await manager.mutate({ operation: "edit", id: "default-1", text: "Updated" }));
+  assert(await manager.mutate({ operation: "edit", id: "default-13", text: "Updated" }));
   assert.equal(sent.revision, 0);
   stale.resolve(document(0));
   await poll;
@@ -65,7 +65,7 @@ async function managerChecks() {
     throw Object.assign(new Error("Review the latest queue"), { status: 409 });
   };
   assert.equal(
-    await manager.mutate({ operation: "edit", id: "default-1", text: "Conflict" }),
+    await manager.mutate({ operation: "edit", id: "default-13", text: "Conflict" }),
     false,
   );
   assert.equal(manager.getSnapshot().queue.revision, 2);
@@ -73,8 +73,8 @@ async function managerChecks() {
   assert.equal(manager.getSnapshot().error, true);
   assert.equal(manager.getSnapshot().connected, true);
   update = async () => document(3);
-  assert(await manager.move("default-1", 1));
-  assert.deepEqual(sent.ids.slice(0, 2), ["default-2", "default-1"]);
+  assert(await manager.move("default-13", 1));
+  assert.deepEqual(sent.ids.slice(0, 2), ["default-14", "default-13"]);
   assert.equal(sent.revision, 2);
   get = async () => {
     throw new Error("Offline");
@@ -131,7 +131,7 @@ async function managerChecks() {
     },
   });
   await stopped.refresh();
-  const saving = stopped.mutate({ operation: "edit", id: "default-1", text: "Conflict" });
+  const saving = stopped.mutate({ operation: "edit", id: "default-13", text: "Conflict" });
   await flush();
   stopped.stop();
   const previous = stopped.getSnapshot();
@@ -153,8 +153,8 @@ async function synchronizerChecks() {
     },
     getRuntimeStatus: () => ({
       revision: current.revision,
-      currentId: "default-1",
-      nextId: "default-2",
+      currentId: "default-13",
+      nextId: "default-14",
       active: true,
     }),
   };
@@ -295,7 +295,7 @@ function reactChecks() {
   let markup = fixtures.managerMarkup(state);
   assert(markup.includes("&lt;script&gt;alert(1)&lt;/script&gt; &amp; question"));
   assert(!markup.includes("<script>"));
-  assert.equal((markup.match(/class="question-row/g) || []).length, 12);
+  assert.equal((markup.match(/class="question-row/g) || []).length, Queue.defaults.length);
   assert(markup.includes("question-row is-hidden"));
   assert(markup.includes("question-row is-current"));
   assert.equal(getConnectionStatus(state).received, true);

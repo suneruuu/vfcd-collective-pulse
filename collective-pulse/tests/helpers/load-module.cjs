@@ -12,6 +12,10 @@ module.exports = function loadModule(file) {
     format: "cjs",
     packages: "external",
     jsx: "automatic",
+    loader: { ".css": "empty" },
+    define: {
+      "import.meta.env": JSON.stringify({ BASE_URL: "/", VITE_CAMPAIGN_START_DATE: "2026-09-14" }),
+    },
     write: false,
     logLevel: "silent",
   });

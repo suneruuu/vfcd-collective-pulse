@@ -29,7 +29,18 @@ export function createFrontendHandler(dist) {
         error: "Method not allowed.",
       });
     const route = decodeURIComponent(url.pathname);
-    const file = ["/", "/index.html", "/prompts", "/prompts/", "/prompts.html"].includes(route)
+    const file = [
+      "/",
+      "/index.html",
+      "/prompts",
+      "/prompts/",
+      "/prompts.html",
+      "/prompts/index.html",
+      "/vote",
+      "/vote/",
+      "/vote.html",
+      "/vote/index.html",
+    ].includes(route)
       ? "index.html"
       : route.slice(1);
     if (!files.has(file))

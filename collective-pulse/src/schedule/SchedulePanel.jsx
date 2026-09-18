@@ -1,3 +1,4 @@
+import { assetUrl } from "../services/paths.js";
 import { useMemo, useRef, useEffect } from "react";
 import { useClock } from "../hooks/useClock.js";
 import {
@@ -48,7 +49,7 @@ export function SchedulePanel({
       <header className="schedule-header">
         <img
           className="schedule-live-icon"
-          src="/assets/schedule-live.svg"
+          src={assetUrl("schedule-live.svg")}
           width="20"
           height="20"
           alt=""
@@ -70,7 +71,7 @@ export function SchedulePanel({
           <img
             key={offset}
             className="schedule-timeline-grid"
-            src="/assets/schedule-timeline-grid.svg"
+            src={assetUrl("schedule-timeline-grid.svg")}
             width="388"
             height="333"
             alt=""
@@ -99,7 +100,7 @@ export function SchedulePanel({
         hidden={markerHidden}
         style={{ "--now-x": markerX }}
       >
-        <img src="/assets/schedule-timeline-now.svg" width="362.333" height="10.6667" alt="" />
+        <img src={assetUrl("schedule-timeline-now.svg")} width="362.333" height="10.6667" alt="" />
       </div>
       <a
         className="schedule-source sr-only"

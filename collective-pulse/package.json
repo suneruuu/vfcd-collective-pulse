@@ -8,12 +8,15 @@
   },
   "scripts": {
     "dev": "node server.js --dev",
-    "build": "vite build",
+    "build": "vite build && node scripts/static-routes.cjs",
     "start": "node server.js",
     "test": "node scripts/run-checks.cjs",
-    "format": "prettier --write src shared server tests scripts server.js vite.config.js index.html README.md package.json .prettierrc.json"
+    "format": "prettier --write src shared server tests scripts server.js vite.config.js index.html README.md package.json .prettierrc.json",
+    "test:database": "node tests/database-check.cjs",
+    "test:static": "node tests/static-check.cjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
     "p5": "^1.11.10",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"

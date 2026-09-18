@@ -1,0 +1,101 @@
+body.vote-page {
+  touch-action: auto;
+  overflow-y: auto;
+}
+body.vote-page #root {
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
+}
+.vote-screen {
+  min-height: 100svh;
+  padding: max(24px, env(safe-area-inset-top)) 30px max(24px, env(safe-area-inset-bottom));
+  display: grid;
+  align-content: center;
+  background: #000;
+  color: #fff;
+}
+.vote-content {
+  width: min(100%, 368px);
+  margin: 0 auto;
+}
+.vote-content h1 {
+  margin: 0 0 40px;
+  font-size: clamp(32px, 11.2vw, 48px);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+.vote-buttons {
+  display: grid;
+  gap: 20px;
+}
+.vote-buttons button {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px;
+  border: 0;
+  border-radius: 0;
+  color: #000;
+  font:
+    700 48px/1 "Iosevka Charon",
+    "Arial Narrow",
+    monospace;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.vote-buttons button span {
+  display: inline-block;
+  transform: scaleX(0.8);
+}
+.vote-yes {
+  background: #06ffcd;
+}
+.vote-no {
+  background: #ff6d05;
+}
+.vote-buttons button:active:not(:disabled) {
+  filter: brightness(0.85);
+}
+.vote-buttons button:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 5px;
+}
+.vote-buttons button:disabled {
+  cursor: default;
+}
+.vote-message {
+  min-height: 36px;
+  margin: 20px 0 0;
+  color: #aaa;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.cloud-status {
+  position: fixed;
+  top: 12px;
+  left: 16px;
+  z-index: 20;
+  color: #fff;
+  background: #000;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+@media (max-height: 620px) {
+  .vote-screen {
+    align-content: start;
+  }
+  .vote-content h1 {
+    margin-bottom: 24px;
+  }
+  .vote-buttons button {
+    min-height: 72px;
+  }
+}
+
+.vote-message:empty {
+  display: none;
+}

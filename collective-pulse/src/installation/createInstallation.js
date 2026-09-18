@@ -25,6 +25,7 @@ export function createInstallation({
   focusCanvas = () => {},
   pixelRatio = 1,
   clock = Date,
+  cloud = null,
 }) {
   const runtime = createRuntime();
   const navigationHelper = createNavigationHelper(runtime, { clock });
@@ -42,6 +43,7 @@ export function createInstallation({
   const persistence = createPersistence(runtime, {
     clock,
     storage,
+    enabled: !cloud,
   });
   const voting = createVoting(runtime, {
     clock,
@@ -85,6 +87,8 @@ export function createInstallation({
     campaign,
     persistence,
     voting,
+    canVote: cloud ? cloud.canVote : () => true,
+    submitVotes: cloud ? cloud.submit : null,
     onVotes(choices, now) {
       if (!runtime.fitAll && runtime.selectedOverviewDay === null) runtime.followLive = true;
       runtime.ripples.push(
@@ -137,9 +141,9 @@ export function createInstallation({
       CONFIG.CAMPAIGN_START_DATE + "T00:00:00" + CONFIG.CAMPAIGN_TIMEZONE_OFFSET,
     ).getTime();
     runtime.campaignEndMs = runtime.campaignStartMs + CONFIG.CAMPAIGN_DAYS * CONFIG.DAY_MS;
-    persistence.clearLegacyCampaignStorage();
+    if (!cloud) persistence.clearLegacyCampaignStorage();
     restorePromptQueueCache();
-    runtime.state = persistence.loadState();
+    runtime.state = cloud ? persistence.createEmptyState() : persistence.loadState();
     voting.rebuildDerived();
     const timing = campaign.getCampaignTiming(clock.now());
     runtime.targetPanelColor = p.color(
@@ -161,9 +165,9 @@ export function createInstallation({
     const layout = viewport.getLayout();
     phase.updateTimedScreen(layout, timing, now);
     const graphTiming = camera.getGraphTiming(timing);
-    controller.handleDayChange(timing, now);
+    if (!cloud) controller.handleDayChange(timing, now);
     input.updateInputSampling(now);
-    prompts.updatePromptClock(timing, now);
+    if (!cloud) prompts.updatePromptClock(timing, now);
     camera.updateCamera(graphTiming, layout.graph);
     renderer.updatePanelColor(timing);
     p.background(0);
@@ -177,6 +181,44 @@ export function createInstallation({
       }
     }
     onSnapshot(getUiSnapshot(runtime, timing, now, layout, formatting));
+  }
+  const cloudVotes = new Map();
+  function applyCloudVotes(records, personal = false, animate = personal) {
+    const added = records.filter((record) => !cloudVotes.has(record.id));
+    for (const record of added) cloudVotes.set(record.id, record);
+    if (!added.length) return;
+    runtime.state.votes = [...cloudVotes.values()]
+      .sort((a, b) => a.timestamp - b.timestamp || a.id - b.id)
+      .map((record) => [record.timestamp, record.choice]);
+    runtime.state.lastLeader = 0;
+    voting.rebuildDerived();
+    runtime.targetPanelColor = p.color(voting.panelColorForTotals());
+    if (animate) {
+      const now = clock.now();
+      runtime.ripples.push(...added.map((record) => ({ choice: record.choice, bornAt: now })));
+    }
+    if (personal) {
+      if (!runtime.fitAll && runtime.selectedOverviewDay === null) runtime.followLive = true;
+      announce(
+        added.length + " responses recorded. " + runtime.derived.total + " total responses.",
+      );
+    }
+  }
+  function applyCloudPulse(data) {
+    runtime.campaignStartMs = data.campaign.startMs;
+    runtime.campaignEndMs = data.campaign.startMs + data.campaign.days * CONFIG.DAY_MS;
+    if (runtime.promptQueueRevision !== data.queue.revision) applyPromptQueue(data.queue);
+    const shared = data.queue.sharedPrompts;
+    runtime.state.prompts.dayIndex = shared.dayIndex;
+    runtime.state.prompts.currentId = shared.currentId;
+    runtime.state.prompts.visible = shared.visible.flatMap(({ id, shownAt }) => {
+      const index = runtime.managedPrompts.findIndex((prompt) => prompt.id === id);
+      return index >= 0 ? [[index, shownAt]] : [];
+    });
+    runtime.state.prompts.nextIndex = Math.max(
+      0,
+      runtime.managedPrompts.findIndex((prompt) => prompt.id === data.queue.installation.nextId),
+    );
   }
   function windowResized() {
     p.resizeCanvas(p.windowWidth, p.windowHeight);
@@ -231,6 +273,8 @@ export function createInstallation({
     draw,
     windowResized,
     applyPromptQueue,
+    applyCloudPulse,
+    applyCloudVotes,
     restorePromptQueueCache,
     campaign,
     formatting,

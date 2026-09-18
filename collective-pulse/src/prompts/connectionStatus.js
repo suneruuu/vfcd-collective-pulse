@@ -6,11 +6,13 @@ export function getConnectionStatus({ queue, connected }) {
     state: !connected ? "offline" : received ? "live" : "pending",
     text: !connected
       ? "Question service disconnected"
-      : !live?.online
-        ? "Queue ready \u00b7 installation display offline"
-        : !received
-          ? "Saved \u00b7 waiting for installation to receive changes"
-          : "Installation connected \u00b7 " +
-            (live.active ? "voting open" : "outside voting hours"),
+      : live?.cloud
+        ? "Cloud connected · " + (live.active ? "voting open" : "outside voting hours")
+        : !live?.online
+          ? "Queue ready \u00b7 installation display offline"
+          : !received
+            ? "Saved \u00b7 waiting for installation to receive changes"
+            : "Installation connected \u00b7 " +
+              (live.active ? "voting open" : "outside voting hours"),
   };
 }

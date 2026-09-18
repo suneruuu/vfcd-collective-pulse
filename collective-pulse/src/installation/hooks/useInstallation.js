@@ -3,6 +3,8 @@ import { createInstallation } from "../createInstallation.js";
 import { createExternalStore } from "../../services/externalStore.js";
 import { createPromptSynchronizer } from "../../services/promptSynchronizer.js";
 import { promptApi } from "../../services/promptApi.js";
+import { cloudApi, cloudEnabled } from "../../services/cloudApi.js";
+import { createCloudConnection } from "../../services/cloudConnection.js";
 export function useInstallation(host) {
   const store = useRef(null);
   if (!store.current) store.current = createExternalStore(null);
@@ -25,11 +27,33 @@ export function useInstallation(host) {
       .then(({ default: P5 }) => {
         if (cancelled) return;
         instance = new P5((p) => {
-          const engine = createInstallation({
+          let engine;
+          const cloud = cloudEnabled
+            ? createCloudConnection({
+                api: cloudApi,
+                onPulse: (data) => engine.applyCloudPulse(data),
+                onVotes: (records, personal, live) => engine.applyCloudVotes(records, personal, live),
+              })
+            : null;
+          const EngineClock = cloud
+            ? class extends Date {
+                static now() {
+                  return cloud.now();
+                }
+              }
+            : Date;
+          engine = createInstallation({
             p,
             storage: window.localStorage,
             pixelRatio: window.devicePixelRatio || 1,
-            onSnapshot: store.current.publish,
+            cloud,
+            clock: EngineClock,
+            onSnapshot: (next) =>
+              store.current.publish({
+                ...next,
+                cloudStatus:
+                  cloud && !cloud.getSnapshot().connected ? cloud.getSnapshot().message : "",
+              }),
             focusCanvas: () => host.current?.querySelector("canvas")?.focus(),
           });
           engineRef.current = engine;
@@ -37,11 +61,19 @@ export function useInstallation(host) {
           p.setup = () => {
             if (cancelled) return;
             engine.setup();
-            sync = createPromptSynchronizer({
-              api: promptApi,
-              installation: engine,
-            });
+            sync =
+              cloud ||
+              createPromptSynchronizer({
+                api: promptApi,
+                installation: engine,
+              });
             sync.start();
+            if (cloud)
+              cleanupListeners.push(
+                cloud.subscribe(() => {
+                  if (!cloud.canVote()) engine.input.resetInputSampling();
+                }),
+              );
             listen(window, "online", sync.syncOnce);
             const resetInteraction = () => {
               engine.input.resetInputSampling();

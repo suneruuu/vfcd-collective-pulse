@@ -1,3 +1,4 @@
+import { assetUrl } from "../../services/paths.js";
 export function TimedScreen({ snapshot, invoke }) {
   const screen = snapshot.timedScreen;
   return (
@@ -23,7 +24,7 @@ export function TimedScreen({ snapshot, invoke }) {
         aria-label={snapshot.pulsePreview ? "Return to timed screen" : "View recorded pulse"}
         onClick={() => invoke("togglePreview")}
       >
-        <img src="/assets/view-pulse.svg" width="24" height="24" alt="" />
+        <img src={assetUrl("view-pulse.svg")} width="24" height="24" alt="" />
         <span id="view-pulse-label">{snapshot.pulsePreview ? "Hide pulse" : "View pulse"}</span>
       </button>
     </section>

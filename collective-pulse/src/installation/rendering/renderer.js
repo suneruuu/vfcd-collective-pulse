@@ -1,5 +1,6 @@
 import { CONFIG, YES, NO } from "../../config/installation.js";
 import { clamp } from "../../../shared/math.js";
+import { assetUrl } from "../../services/paths.js";
 export function createRenderer(
   runtime,
   { campaign, formatting, p, viewport, voting, clock = Date },
@@ -18,7 +19,7 @@ export function createRenderer(
       prompt100: "prompt-100.svg",
     };
     for (const [name, filename] of Object.entries(assetFiles)) {
-      runtime.designAssets[name] = p.loadImage(`assets/${filename}`);
+      runtime.designAssets[name] = p.loadImage(assetUrl(filename));
     }
   }
   // -----------------------------------------------------------------------------

@@ -27,6 +27,11 @@ export function InstallationShell({ snapshot = INITIAL_SNAPSHOT, invoke = () => 
         selectedDayIndex={snapshot.selectedOverviewDay}
       />
       <InstallationControls snapshot={snapshot} invoke={invoke} />
+      {snapshot.cloudStatus && (
+        <p className="cloud-status" role="status">
+          {snapshot.cloudStatus}
+        </p>
+      )}
       <p id="vote-status" className="sr-only" aria-live="polite">
         {snapshot.status}
       </p>

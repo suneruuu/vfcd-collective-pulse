@@ -1,6 +1,6 @@
 import { CONFIG, STATE_VERSION, YES, NO } from "../../config/installation.js";
 import PromptQueue from "../../../shared/prompt-queue.js";
-export function createPersistence(runtime, { storage }) {
+export function createPersistence(runtime, { storage, enabled = true }) {
   // -----------------------------------------------------------------------------
   // CAMPAIGN STATE
   // -----------------------------------------------------------------------------
@@ -143,6 +143,7 @@ export function createPersistence(runtime, { storage }) {
     }
   }
   function saveState() {
+    if (!enabled) return;
     try {
       storage.setItem(storageKey(), JSON.stringify(runtime.state));
       runtime.storageFailed = false;

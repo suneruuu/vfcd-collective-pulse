@@ -94,20 +94,20 @@ assert.deepEqual(
   events.filter((event) => event.type === "text").map((event) => event.args[0]),
   ["D1", "D2", "D3", "D4", "D5", "D6", "D7"],
 );
-const dividers = events.filter((event) => event.source === "assets/overview-day-rule.svg");
+const dividers = events.filter((event) => event.source === "/assets/overview-day-rule.svg");
 assert.equal(dividers.length, 6);
 for (const [index, divider] of dividers.entries()) {
   almostEqual(divider.args[0], x + ((index + 1) * w) / 7 - 0.5);
   assert.deepEqual(divider.args.slice(1), [874, 1.00001, 168]);
 }
-assert.deepEqual(events.find((event) => event.source === "assets/overview-baseline.svg").args, [
+assert.deepEqual(events.find((event) => event.source === "/assets/overview-baseline.svg").args, [
   1498,
   baseline - 0.5,
   389,
   1,
 ]);
 assert.deepEqual(
-  events.find((event) => event.source === "assets/overview-cursor.svg").args,
+  events.find((event) => event.source === "/assets/overview-cursor.svg").args,
   [-2.66667, -2.666665, 139.667, 5.33333],
 );
 assert(
@@ -117,7 +117,7 @@ assert(
 );
 assert(
   events.findIndex((event) => event.type === "ctx-restore") <
-    events.findIndex((event) => event.source === "assets/overview-cursor.svg"),
+    events.findIndex((event) => event.source === "/assets/overview-cursor.svg"),
   "The cursor's top dot must not be clipped",
 );
 assert(events.some((event) => event.type === "stroke" && event.args[0] === 0));
@@ -216,7 +216,7 @@ assert.equal(denseTrace.at(-1).args[2], cursorX);
 // retain D1-D7, all dividers and the current-time cursor in every timed state.
 now = new Date("2026-09-22T12:00:00+07:00").getTime();
 almostEqual(render().at(-1).args[2], x + w);
-assert(events.some((event) => event.source === "assets/overview-cursor.svg"));
+assert(events.some((event) => event.source === "/assets/overview-cursor.svg"));
 const weekLabels = ["D1", "D2", "D3", "D4", "D5", "D6", "D7"];
 assert.deepEqual(
   events.filter((event) => event.type === "text").map((event) => event.args[0]),
@@ -245,8 +245,11 @@ for (const date of [
     events.filter((event) => event.type === "text").map((event) => event.args[0]),
     weekLabels,
   );
-  assert.equal(events.filter((event) => event.source === "assets/overview-day-rule.svg").length, 6);
-  assert(events.some((event) => event.source === "assets/overview-cursor.svg"));
+  assert.equal(
+    events.filter((event) => event.source === "/assets/overview-day-rule.svg").length,
+    6,
+  );
+  assert(events.some((event) => event.source === "/assets/overview-cursor.svg"));
   assert(
     lines.every((event) => event.args[0] <= endX && event.args[2] <= endX),
     "future days must stay blank rather than show votes that have not occurred yet",
@@ -286,7 +289,7 @@ for (const date of [
 }
 almostEqual(run("overviewXForTimestamp(campaignStartMs - 1000, getLayout())"), x);
 almostEqual(run("overviewXForTimestamp(campaignEndMs + 1000, getLayout())"), x + w);
-assert.equal(run("CONFIG.STORAGE_KEY"), "collective_pulse_v4");
+assert.equal(run("CONFIG.STORAGE_KEY"), "collective_pulse_v5");
 assert.equal(run("CONFIG.CAMPAIGN_START_DATE"), "2026-09-14");
 
 // Every equal-width D1-D7 segment is exactly nine open hours. Closed periods
@@ -362,11 +365,11 @@ for (const [width, height] of [
     sy = height / 1080;
   const scaledBaseline = run("getLayout().overview.baseline");
   almostEqual(scaledBaseline, (874 + 137 / 2) * sy);
-  const cursor = events.find((event) => event.source === "assets/overview-cursor.svg");
+  const cursor = events.find((event) => event.source === "/assets/overview-cursor.svg");
   assert.deepEqual(cursor.args, [-2.66667 * sy, -2.666665 * sx, 139.667 * sy, 5.33333 * sx]);
-  const divider = events.find((event) => event.source === "assets/overview-day-rule.svg");
+  const divider = events.find((event) => event.source === "/assets/overview-day-rule.svg");
   assert.deepEqual(divider.args.slice(1), [874 * sy, 1.00001 * sx, 168 * sy]);
-  assert.deepEqual(events.find((event) => event.source === "assets/overview-baseline.svg").args, [
+  assert.deepEqual(events.find((event) => event.source === "/assets/overview-baseline.svg").args, [
     1498 * sx,
     scaledBaseline - 0.5 * sy,
     389 * sx,
