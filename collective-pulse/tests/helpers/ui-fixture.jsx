@@ -8,6 +8,7 @@ export const installationMarkup = (snapshot) =>
   renderToStaticMarkup(<InstallationShell snapshot={{ ...INITIAL_SNAPSHOT, ...snapshot }} />);
 export const scheduleMarkup = (now, visible = true) =>
   renderToStaticMarkup(<SchedulePanel now={now} visible={visible} />);
-export const agendaMarkup = (agenda) => renderToStaticMarkup(<ScheduleAgenda agenda={agenda} />);
+export const timelineMarkup = (timeline) =>
+  renderToStaticMarkup(<ScheduleAgenda timeline={timeline} />);
 export const scheduleCardMarkup = (event) => renderToStaticMarkup(<ScheduleCard event={event} />);
 export const managerMarkup = (state) => renderToStaticMarkup(<PromptManagerShell state={state} />);

@@ -366,9 +366,9 @@ canvas {
   left: calc(1465 * var(--sx));
   top: 0;
   width: calc(455 * var(--sx));
-  height: calc(409 * var(--sy));
+  height: calc(430 * var(--sy));
   overflow: hidden;
-  background: #222;
+  background: #1e1e1e;
   color: rgb(255 255 255 / 80%);
 }
 
@@ -385,7 +385,7 @@ canvas {
 
 .schedule-live-icon {
   position: absolute;
-  left: calc(23 * var(--sx));
+  left: calc(25 * var(--sx));
   top: calc(33 * var(--sy));
   width: calc(20 * var(--ui));
   height: calc(20 * var(--ui));
@@ -393,40 +393,63 @@ canvas {
 
 #schedule-weekday {
   position: absolute;
-  left: calc(45 * var(--sx));
-  top: calc(30 * var(--sy));
+  left: calc(47 * var(--sx));
+  top: calc(25 * var(--sy));
+  font-weight: 700;
   font-style: italic;
 }
 
 #schedule-date {
   position: absolute;
-  right: calc(34 * var(--sx));
-  top: calc(30 * var(--sy));
+  right: calc(32 * var(--sx));
+  top: calc(25 * var(--sy));
   font-weight: 700;
   white-space: nowrap;
 }
 
-.schedule-venue {
+.schedule-axis {
   position: absolute;
-  top: calc(83 * var(--sy));
-  font-size: calc(20 * var(--ui));
+  left: calc(45 * var(--sx));
+  top: calc(61 * var(--sy));
+  width: calc(386 * var(--sx));
+  height: calc(18 * var(--sy));
+  color: rgb(255 255 255 / 40%);
+  font-size: calc(14 * var(--ui));
+  line-height: calc(18 * var(--ui));
+  letter-spacing: calc(-0.98 * var(--ui));
+}
+
+.schedule-axis time {
+  position: absolute;
+  left: calc(var(--tick-x) * var(--sx));
+  transform: translateX(-50%);
   white-space: nowrap;
 }
 
-.schedule-venue-nina {
-  left: calc(89 * var(--sx));
+.schedule-grid {
+  position: absolute;
+  left: calc(44.5 * var(--sx));
+  top: calc(79 * var(--sy));
+  width: calc(388 * var(--sx));
+  height: calc(333 * var(--sy));
+  overflow: hidden;
+  pointer-events: none;
 }
 
-.schedule-venue-satellite {
-  left: calc(264 * var(--sx));
+.schedule-timeline-grid {
+  position: absolute;
+  left: calc(var(--grid-x) * var(--sx));
+  top: 0;
+  width: calc(var(--grid-width) * var(--sx));
+  height: calc(333 * var(--sy));
 }
 
 #schedule-scroll {
   position: absolute;
-  left: calc(27 * var(--sx));
-  top: calc(120 * var(--sy));
-  width: calc(401 * var(--sx));
-  height: calc(251 * var(--sy));
+  left: calc(11 * var(--sx));
+  top: calc(79 * var(--sy));
+  width: calc(435 * var(--sx));
+  height: calc(333 * var(--sy));
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -443,139 +466,117 @@ canvas {
 }
 
 #schedule-events {
-  margin-left: calc(5 * var(--sx));
-  width: calc(391 * var(--sx));
+  position: relative;
+  margin-left: calc(34 * var(--sx));
+  width: calc(386 * var(--sx));
+  height: calc(var(--timeline-height) * var(--sy));
 }
 
-.schedule-row {
-  display: grid;
-  grid-template-columns: calc(48 * var(--sx)) calc(176 * var(--sx)) calc(167 * var(--sx));
-  height: calc(var(--row-height) * var(--sy));
-}
-
-.schedule-time {
-  color: rgb(255 255 255 / 40%);
-  font-size: calc(16 * var(--ui));
-  line-height: calc(20 * var(--ui));
-}
-
-.schedule-lane {
-  padding-left: calc(9 * var(--sx));
-}
-
-.schedule-lane:last-child {
-  padding-left: calc(8 * var(--sx));
-}
-
-.schedule-card {
-  width: calc(159 * var(--sx));
-  height: calc(122 * var(--sy));
-  margin-bottom: calc(7 * var(--sy));
-  padding: calc(9 * var(--sy)) calc(11 * var(--sx));
-  overflow: hidden;
-  border-radius: calc(3 * var(--ui));
-  background: #000;
-  font-size: calc(16 * var(--ui));
-  line-height: calc(20 * var(--ui));
-}
-
-.schedule-card p {
-  margin: 0;
-}
-
-.schedule-card-title,
-.schedule-card-location {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  overflow-wrap: anywhere;
-}
-
-.schedule-card-title {
-  min-height: calc(40 * var(--ui));
-}
-
-.schedule-card-track {
-  line-height: calc(16 * var(--ui));
-}
-
-.schedule-card-detail,
-.schedule-card-location {
-  color: rgb(255 255 255 / 40%);
-  font-size: calc(14 * var(--ui));
-  line-height: calc(16 * var(--ui));
-}
-
-.schedule-end {
-  height: calc(20 * var(--sy));
-}
-
-.schedule-column-rule {
+.schedule-venue {
   position: absolute;
-  top: calc(120 * var(--sy));
-  width: calc(2 * var(--sx));
-  height: calc(251 * var(--sy));
+  left: calc(-34 * var(--sx));
+  top: calc(var(--venue-y) * var(--sy));
+  width: calc(17 * var(--sx));
+  height: calc(89 * var(--sy));
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  font-size: calc(13 * var(--ui));
+  font-weight: 700;
+  line-height: calc(17 * var(--ui));
+}
+
+.schedule-venue-rule {
+  position: absolute;
+  left: calc(-34 * var(--sx));
+  top: calc(var(--venue-rule-y) * var(--sy) - 2 * var(--sy));
+  width: calc(435 * var(--sx));
+  height: calc(2 * var(--sy));
+  transform: rotate(180deg);
   pointer-events: none;
 }
 
-.schedule-column-rule-nina {
-  left: calc(80 * var(--sx));
-}
-
-.schedule-column-rule-satellite {
-  left: calc(256 * var(--sx));
-}
-
-.schedule-column-rule img {
+.schedule-card {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: calc(251 * var(--sy));
-  height: calc(2 * var(--sx));
-  transform: translate(-50%, -50%) rotate(90deg);
+  left: calc(var(--event-x) * var(--sx));
+  top: calc(var(--event-y) * var(--sy));
+  width: calc(var(--event-width) * var(--sx));
+  font-size: calc(13 * var(--ui));
+  line-height: calc(17 * var(--ui));
+}
+
+.schedule-event-bar {
+  width: 100%;
+  height: calc(6 * var(--sy));
+  border-radius: calc(3 * var(--ui));
+  background: #a8a8a8;
+}
+
+.schedule-card-caption {
+  position: relative;
+  left: calc(var(--label-offset) * var(--sx));
+  width: calc(var(--label-width) * var(--sx));
+  display: flex;
+  align-items: baseline;
+  gap: calc(7 * var(--sx));
+  margin-top: calc(2 * var(--sy));
+}
+
+.schedule-card-track {
+  flex: 0 0 auto;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.schedule-card-track span {
+  font-weight: 400;
+}
+
+.schedule-card-title {
+  min-width: 0;
+  margin: 0;
+  color: rgb(255 255 255 / 50%);
+  overflow-wrap: anywhere;
+}
+
+.schedule-card-location {
+  display: block;
+  font-style: italic;
 }
 
 #schedule-now {
   position: absolute;
-  left: calc(5.5 * var(--sx));
-  top: var(--now-y, 0px);
-  width: calc(377 * var(--sx));
-  height: 0;
+  left: calc((45 + var(--now-x, 0)) * var(--sx));
+  top: calc(56 * var(--sy));
+  width: 0;
+  height: calc(356 * var(--sy));
   pointer-events: none;
 }
 
 #schedule-now img {
   position: absolute;
-  left: calc(-5.33333 * var(--sx));
-  top: calc(-5.33333 * var(--sy));
-  width: calc(383.333 * var(--sx));
-  height: calc(10.6667 * var(--sy));
-  transform: rotate(180deg);
+  left: calc(-181.1665 * var(--sy));
+  top: calc(175.8335 * var(--sy) - 5.33335 * var(--sx));
+  width: calc(362.333 * var(--sy));
+  height: calc(10.6667 * var(--sx));
+  transform: rotate(-90deg);
 }
 
-.schedule-source,
-#schedule-status {
-  position: absolute;
-  bottom: calc(14 * var(--sy));
-  color: rgb(255 255 255 / 40%);
-  font-size: calc(12 * var(--ui));
-  line-height: calc(16 * var(--ui));
-}
-
-.schedule-source {
-  left: calc(32 * var(--sx));
-  text-decoration: none;
-}
-
-.schedule-source:hover,
 .schedule-source:focus-visible {
+  position: absolute;
+  left: calc(32 * var(--sx));
+  bottom: calc(2 * var(--sy));
+  width: auto;
+  height: auto;
+  padding: 2px;
+  clip: auto;
+  clip-path: none;
+  background: #1e1e1e;
   color: #fff;
-  text-decoration: underline;
-}
-
-#schedule-status {
-  right: calc(34 * var(--sx));
 }
 
 #overview-days {

@@ -306,8 +306,10 @@ const assetSizes = {
   "prompt-50.svg": [60, 2],
   "prompt-60.svg": [60, 2],
   "prompt-100.svg": [60, 2],
-  "schedule-column-rule.svg": [251, 2],
-  "schedule-now.svg": [383.333, 10.6667],
+  "schedule-live.svg": [20, 20],
+  "schedule-timeline-grid.svg": [388, 333],
+  "schedule-timeline-now.svg": [362.333, 10.6667],
+  "schedule-venue-rule.svg": [435, 2],
 };
 for (const [file, expected] of Object.entries(assetSizes)) {
   const svg = fs.readFileSync(path.join(project, "public/assets", file), "utf8");
