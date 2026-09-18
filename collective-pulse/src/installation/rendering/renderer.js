@@ -38,17 +38,17 @@ export function createRenderer(
     p.textAlign(p.LEFT, p.TOP);
     p.textStyle(p.BOLD);
     p.textSize(20 * ui);
-    p.text("COLLECTIVE PULSE", x, 437 * layout.sy);
+    p.text("COLLECTIVE PULSE", x, 446 * layout.sy);
     p.textStyle(p.NORMAL);
     p.textSize(20 * ui);
-    p.textLeading(24 * ui);
+    p.textLeading(27 * ui);
     p.textWrap(p.WORD);
     p.text(
       "Vietnam's creative community is growing rapidly. Collective Pulse installation asks what kind of future we want to build for design in Vietnam.",
       x,
-      476 * layout.sy,
+      485 * layout.sy,
       contentW,
-      125 * layout.sy,
+      115 * layout.sy,
     );
     p.text(
       "Come & make your choice. Your response becomes part of the collective dataset.",
@@ -57,14 +57,14 @@ export function createRenderer(
       contentW,
       60 * layout.sy,
     );
-    drawPanelRule(layout, 668 * layout.sy);
+    drawPanelRule(layout, 677 * layout.sy);
     if (timing.before) return;
     p.textStyle(p.BOLD);
     p.textSize(20 * ui);
     p.text(
       `${runtime.derived.total.toLocaleString()} RESPONSES`,
       1502 * layout.sx,
-      689 * layout.sy,
+      713 * layout.sy,
     );
     const yesPercent = runtime.derived.total
       ? Math.round((runtime.derived.yes / runtime.derived.total) * 100)
@@ -73,8 +73,8 @@ export function createRenderer(
     p.textAlign(p.LEFT, p.TOP);
     p.textStyle(p.NORMAL);
     p.textSize(20 * ui);
-    p.text(`• YES ${yesPercent}%`, 1519 * layout.sx, 717 * layout.sy);
-    p.text(`• NO ${noPercent}%`, 1519 * layout.sx, 744 * layout.sy);
+    p.text(`• YES ${yesPercent}%`, 1798 * layout.sx, 713 * layout.sy);
+    p.text(`• NO ${noPercent}%`, 1798 * layout.sx, 740 * layout.sy);
     drawPanelRule(layout, 786 * layout.sy);
     p.textStyle(p.BOLD);
     p.textSize(20 * ui);

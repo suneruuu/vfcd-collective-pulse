@@ -503,7 +503,7 @@ for (const [w, h] of [
   const waitingImages = events.filter((event) => event.type === "image");
   assert.equal(waitingImages.length, 1);
   assert.equal(waitingImages[0].source, "assets/panel-rule.svg");
-  assert.deepEqual(waitingImages[0].args, [1498 * sx, 667 * sy, 389 * sx, sy]);
+  assert.deepEqual(waitingImages[0].args, [1498 * sx, 676 * sy, 389 * sx, sy]);
   assert.equal(
     run("queueDirection(YES, Date.now())"),
     false,
