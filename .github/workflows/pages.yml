@@ -1,0 +1,49 @@
+name: Collective Pulse Pages
+on:
+  push:
+    branches: [main]
+    paths: ['collective-pulse/**', '.github/workflows/pages.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    defaults:
+      run:
+        working-directory: collective-pulse
+    env:
+      VITE_BASE_PATH: /vfcd-collective-pulse/
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: collective-pulse/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:database
+      - name: Check online voting configuration
+        run: |
+          test -n "$VITE_SUPABASE_URL" || { echo "Set repository variable VITE_SUPABASE_URL."; exit 1; }
+          test -n "$VITE_SUPABASE_PUBLISHABLE_KEY" || { echo "Set repository variable VITE_SUPABASE_PUBLISHABLE_KEY."; exit 1; }
+      - run: npm run build
+      - run: npm run test:static
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: collective-pulse/dist
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5
