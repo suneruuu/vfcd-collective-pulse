@@ -26,6 +26,75 @@ body.vote-page #root {
   line-height: 1.1;
   letter-spacing: -0.025em;
 }
+.vote-auth-brand {
+  margin: 0 0 16px;
+  color: #aaa;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.vote-auth-content h1 {
+  margin-bottom: 24px;
+}
+.vote-auth-copy {
+  margin: 0 0 28px;
+  color: #ccc;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.vote-google-button,
+.vote-signout {
+  border: 1px solid #fff;
+  background: #fff;
+  color: #000;
+  font: inherit;
+  cursor: pointer;
+}
+.vote-google-button {
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 20px;
+  font-weight: 700;
+}
+.vote-google-button:focus-visible,
+.vote-signout:focus-visible {
+  outline: 3px solid #06ffcd;
+  outline-offset: 4px;
+}
+.vote-google-button:disabled,
+.vote-signout:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.vote-auth-content [role="alert"] {
+  margin: 20px 0 0;
+  color: #ff6d05;
+  line-height: 1.4;
+}
+.vote-signout {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 30;
+  padding: 8px 12px;
+  background: #000;
+  color: #fff;
+  font-size: 13px;
+}
+.vote-session-error {
+  position: fixed;
+  right: 16px;
+  bottom: 62px;
+  left: 16px;
+  z-index: 30;
+  margin: 0 auto;
+  max-width: 368px;
+  padding: 8px 12px;
+  background: #000;
+  color: #ff6d05;
+  font-size: 13px;
+  text-align: right;
+}
 .vote-buttons {
   display: grid;
   gap: 20px;

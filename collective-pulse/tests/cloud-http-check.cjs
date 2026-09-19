@@ -7,6 +7,9 @@ const load = require("./helpers/load-module.cjs");
 const { createCloudApi } = load("src/services/cloudApi.js");
 const { createCloudConnection } = load("src/services/cloudConnection.js");
 const { VoteShell } = load("src/vote/VotePage.jsx");
+const { VoteAuthShell, oauthErrorFromLocation, voteRedirectUrl } = load(
+  "src/vote/VoteAuthGate.jsx",
+);
 const Queue = load("shared/prompt-queue.js").default;
 
 async function main() {
@@ -19,7 +22,8 @@ async function main() {
   const now = campaign.startMs + 12 * 3600000;
   const records = [],
     receipts = new Map(),
-    requestIds = [];
+    requestIds = [],
+    submitRoutes = [];
   let dropNext = false;
   const queue = {
     version: 1,
@@ -45,7 +49,12 @@ async function main() {
           hasMore: false,
           queue,
         };
-      } else if (request.url === "/rest/v1/rpc/pulse_submit") {
+      } else if (
+        ["/rest/v1/rpc/pulse_submit", "/rest/v1/rpc/pulse_submit_authenticated"].includes(
+          request.url,
+        )
+      ) {
+        submitRoutes.push(request.url);
         requestIds.push(args.p_request_id);
         if (!receipts.has(args.p_request_id)) {
           const votes = args.p_choices.map((choice) => {
@@ -84,9 +93,9 @@ async function main() {
     const scheduler = { setInterval: () => 1, clearInterval() {} };
     const viewA = new Map(),
       viewB = new Map();
-    function connection(view, includeVotes = true) {
+    function connection(view, includeVotes = true, sourceApi = api) {
       return createCloudConnection({
-        api,
+        api: sourceApi,
         includeVotes,
         scheduler,
         clock: { now: () => now },
@@ -95,12 +104,20 @@ async function main() {
         },
       });
     }
+    const authenticatedApi = {
+      getPulse: (...args) => api.getPulse(...args),
+      submitVotes: (...args) => api.submitAuthenticatedVotes(...args),
+    };
     const displayA = connection(viewA),
       displayB = connection(viewB),
-      phone = connection(new Map(), false);
+      phone = connection(new Map(), false, authenticatedApi);
     await Promise.all([displayA.syncOnce(), displayB.syncOnce(), phone.syncOnce()]);
     assert.equal(await phone.submit([1, 1]), true);
     assert.equal(await displayA.submit([-1]), true);
+    assert.deepEqual(submitRoutes.slice(0, 2), [
+      "/rest/v1/rpc/pulse_submit_authenticated",
+      "/rest/v1/rpc/pulse_submit",
+    ]);
     await Promise.all([displayA.syncOnce(), displayB.syncOnce()]);
     assert.equal(viewA.size, 3);
     assert.deepEqual(
@@ -136,8 +153,50 @@ async function main() {
     );
     assert.equal((offline.match(/disabled=""/g) || []).length, 2);
     assert(offline.includes('role="status"') && offline.includes("Reconnecting..."));
+    const auth = renderToStaticMarkup(
+      React.createElement(VoteAuthShell, {
+        loading: false,
+        configured: true,
+        busy: false,
+        error: "",
+        onSignIn() {},
+      }),
+    );
+    assert(auth.includes("Continue with Google") && auth.includes("Sign in to vote"));
+    assert(!auth.includes("YES") && !auth.includes("NO"));
+    const loading = renderToStaticMarkup(
+      React.createElement(VoteAuthShell, {
+        loading: true,
+        configured: true,
+        busy: false,
+        error: "",
+        onSignIn() {},
+      }),
+    );
+    assert(loading.includes("Checking sign-in...") && !loading.includes("Continue with Google"));
+    const unconfigured = renderToStaticMarkup(
+      React.createElement(VoteAuthShell, {
+        loading: false,
+        configured: false,
+        busy: false,
+        error: "Online voting has not been configured.",
+        onSignIn() {},
+      }),
+    );
+    assert(unconfigured.includes('disabled=""') && unconfigured.includes('role="alert"'));
+    assert.equal(
+      voteRedirectUrl({ origin: "https://suneruuu.github.io" }, "/vfcd-collective-pulse/"),
+      "https://suneruuu.github.io/vfcd-collective-pulse/vote/",
+    );
+    assert.equal(
+      oauthErrorFromLocation({
+        search: "",
+        hash: "#error=access_denied&error_description=User+cancelled",
+      }),
+      "User cancelled",
+    );
     console.log(
-      "SDK/HTTP checks passed: phone and kiosk share results, two displays converge, lost acknowledgements deduplicate, and the voting page has only its question and two controls.",
+      "SDK/HTTP checks passed: authenticated phone and anonymous kiosk submissions share results, OAuth routes resolve, lost acknowledgements deduplicate, and vote states render.",
     );
   } finally {
     server.closeAllConnections();

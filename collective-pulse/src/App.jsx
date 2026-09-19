@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import InstallationPage from "./installation/InstallationPage.jsx";
 import PromptManagerPage from "./prompts/PromptManagerPage.jsx";
 import VotePage from "./vote/VotePage.jsx";
+import VoteAuthGate from "./vote/VoteAuthGate.jsx";
 import AdminGate from "./prompts/AdminGate.jsx";
 import { appPath } from "./services/paths.js";
 export default function App() {
@@ -20,7 +21,9 @@ export default function App() {
       <PromptManagerPage />
     </AdminGate>
   ) : vote ? (
-    <VotePage />
+    <VoteAuthGate>
+      <VotePage />
+    </VoteAuthGate>
   ) : (
     <InstallationPage />
   );

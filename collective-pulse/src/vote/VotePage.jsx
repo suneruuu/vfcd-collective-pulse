@@ -4,6 +4,11 @@ import { createCloudConnection, campaignIsActive } from "../services/cloudConnec
 import { createResponseInput } from "./responseInput.js";
 import "./vote.css";
 
+const authenticatedVoteApi = Object.freeze({
+  getPulse: (...args) => cloudApi.getPulse(...args),
+  submitVotes: (...args) => cloudApi.submitAuthenticatedVotes(...args),
+});
+
 export function VoteShell({ enabled, message = "", status = "", input }) {
   return (
     <main className="vote-screen">
@@ -67,10 +72,10 @@ export function VoteShell({ enabled, message = "", status = "", input }) {
   );
 }
 
-export default function VotePage() {
+export default function VotePage({ api = authenticatedVoteApi }) {
   const connectionRef = useRef(null);
   if (!connectionRef.current)
-    connectionRef.current = createCloudConnection({ api: cloudApi, includeVotes: false });
+    connectionRef.current = createCloudConnection({ api, includeVotes: false });
   const connection = connectionRef.current;
   const state = useSyncExternalStore(
     connection.subscribe,
@@ -87,7 +92,6 @@ export default function VotePage() {
     });
   const input = inputRef.current;
   useEffect(() => {
-    document.body.classList.add("vote-page");
     connection.start();
     const interval = setInterval(() => {
       input.sample();
@@ -107,7 +111,6 @@ export default function VotePage() {
       window.removeEventListener("online", connection.syncOnce);
       window.removeEventListener("blur", input.reset);
       document.removeEventListener("visibilitychange", input.reset);
-      document.body.classList.remove("vote-page");
     };
   }, [connection, input]);
   const active = campaignIsActive(state.campaign, connection.now());

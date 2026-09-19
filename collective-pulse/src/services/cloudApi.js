@@ -53,6 +53,15 @@ export function createCloudApi(client) {
         },
         signal,
       ),
+    submitAuthenticatedVotes: (requestId, choices, signal) =>
+      rpc(
+        "pulse_submit_authenticated",
+        {
+          p_request_id: requestId,
+          p_choices: choices,
+        },
+        signal,
+      ),
     getQueue: async (signal) =>
       (await rpc("pulse_read", { p_after: 0, p_include_votes: false }, signal)).queue,
     updateQueue: (operation, signal) =>

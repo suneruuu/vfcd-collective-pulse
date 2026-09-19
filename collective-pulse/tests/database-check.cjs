@@ -145,6 +145,15 @@ async function main() {
   rejected("select pulse_private.refresh_campaign()", /permission denied/);
   rejected("select public.pulse_update_queue('{}')", /permission denied/);
   rejected("select public.pulse_update_queue('{}')", /Administrator access/, "authenticated");
+  rejected(
+    "select public.pulse_submit_authenticated(gen_random_uuid(), array[1])",
+    /permission denied/,
+  );
+  rejected(
+    "select public.pulse_submit_authenticated(gen_random_uuid(), array[1])",
+    /Sign in to vote/,
+    "authenticated",
+  );
   rejected("select public.pulse_read(-1, true)", /Invalid vote cursor/);
   rejected("select public.pulse_submit(gen_random_uuid(), array[0])", /Choose YES or NO/);
   rejected("select public.pulse_submit(gen_random_uuid(), array[null]::int[])", /Choose YES or NO/);
@@ -399,8 +408,52 @@ async function main() {
     "Adding after emptying the queue restores rotation",
   );
 
+  const voterId = "22222222-2222-4222-8222-222222222222";
+  const voterRequestId = "00000000-0000-4000-8000-000000000099";
+  sql("insert into auth.users values ('" + voterId + "')");
+  const beforeAuthenticatedVote = Number(sql("select count(*) from pulse_private.votes"));
+  const authenticatedReceipt = json(
+    "select public.pulse_submit_authenticated('" + voterRequestId + "', array[1,-1])",
+    "authenticated",
+    voterId,
+  );
+  assert.deepEqual(
+    authenticatedReceipt.votes.map((vote) => vote.choice),
+    [1, -1],
+    "An authenticated voter may submit repeated responses",
+  );
+  assert.equal(
+    Number(sql("select count(*) from pulse_private.votes")),
+    beforeAuthenticatedVote + 2,
+  );
+  assert.equal(
+    sql(
+      "select count(*) from information_schema.columns where table_schema = 'pulse_private' and table_name = 'votes' and column_name = 'user_id'",
+    ),
+    "0",
+    "Vote records must not retain the authenticated user ID",
+  );
+  checked("psql", [...psqlArgs(), "-f", path.join(migrationsDir, "202609190003_voter_oauth.sql")]);
+  assert.deepEqual(
+    json(
+      "select public.pulse_submit_authenticated('" + voterRequestId + "', array[1,-1])",
+      "authenticated",
+      voterId,
+    ),
+    authenticatedReceipt,
+    "Reapplying the OAuth migration must preserve idempotent vote receipts",
+  );
+  assert.equal(
+    Number(sql("select count(*) from pulse_private.votes")),
+    beforeAuthenticatedVote + 2,
+  );
+  rejected(
+    "select public.pulse_submit_authenticated(gen_random_uuid(), array[1])",
+    /permission denied/,
+  );
+
   console.log(
-    "Database checks passed: access control, server hours, idempotency, shared rotation, queue conflicts, deletion, upgrades, concurrent votes, and pagination.",
+    "Database checks passed: OAuth and anonymous access boundaries, server hours, idempotency, shared rotation, queue conflicts, upgrades, concurrent votes, and pagination.",
   );
 }
 main()
