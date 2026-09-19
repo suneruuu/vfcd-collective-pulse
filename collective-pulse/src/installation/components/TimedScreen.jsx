@@ -4,7 +4,7 @@ export function TimedScreen({ snapshot, invoke }) {
   return (
     <section
       id="campaign-screen"
-      aria-label="Collective Pulse opening and closing screen"
+      aria-label="FFFF Live Pulse opening and closing screen"
       hidden={screen?.hidden ?? true}
       data-phase={screen?.phase}
       data-preview={String(snapshot.pulsePreview)}

@@ -421,7 +421,7 @@ assert.equal(nodes["panel-toggle"].attributes["aria-expanded"], "false");
 assert.equal(nodes["panel-toggle"].attributes["aria-label"], "Show navigation helper");
 assert.equal(nodes["festival-schedule"].hidden, false);
 assert.equal(nodes["overview-days"].hidden, false);
-assert(events.some((event) => event.value === "COLLECTIVE PULSE"));
+assert(events.some((event) => event.value === "FFFF LIVE PULSE"));
 assert(events.some((event) => event.value === "OVERVIEW"));
 const collapsedZoom = run("zoomSecondWidth");
 context.mouseX = 1210;
@@ -537,7 +537,7 @@ for (const [w, h] of [
     run("getLayout().information.y"),
     "the schedule and information panel must meet without overlapping",
   );
-  assert.equal(nodes["campaign-screen-label"].textContent, "COLLECTIVE PULSE STARTS IN");
+  assert.equal(nodes["campaign-screen-label"].textContent, "LIVE PULSE STARTS IN");
   assert.equal(nodes["campaign-screen-value"].textContent, "00 : 42 : 18");
   assert.equal(nodes["view-pulse"].hidden, true, "the first opening must not show View pulse");
   assert.equal(cssNumber(firstLabel, "top", w, h), 851 * sy);
@@ -784,7 +784,7 @@ run("draw();");
 assert.equal(nodes["campaign-screen-label"].textContent, "THANK YOU FOR PARTICIPATING");
 assert.equal(
   nodes["campaign-screen-value"].textContent,
-  "COLLECTIVE PULSE COMPLETE",
+  "LIVE PULSE COMPLETED",
   "the final day must not promise another opening outside the configured week",
 );
 assert.equal(run("getCampaignTiming(Date.now()).nextOpenMs"), null);

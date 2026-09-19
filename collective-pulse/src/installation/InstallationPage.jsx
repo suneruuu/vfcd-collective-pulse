@@ -19,7 +19,7 @@ export const INITIAL_SNAPSHOT = {
 export function InstallationShell({ snapshot = INITIAL_SNAPSHOT, invoke = () => {}, host }) {
   return (
     <>
-      <main id="app" ref={host} aria-label="Collective Pulse voting installation" />
+      <main id="app" ref={host} aria-label="FFFF Live Pulse voting installation" />
       <TimedScreen snapshot={snapshot} invoke={invoke} />
       <SchedulePanel
         now={snapshot.now}

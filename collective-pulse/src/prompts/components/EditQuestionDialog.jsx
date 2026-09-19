@@ -14,7 +14,7 @@ export function EditQuestionDialog({ question, busy, connected, error, onSave, o
   return (
     <dialog id="edit-dialog" ref={ref} aria-labelledby="edit-heading" onCancel={onClose}>
       <form id="edit-question" onSubmit={save}>
-        <p>Collective Pulse</p>
+        <p>FFFF Live Pulse</p>
         <h2 id="edit-heading">Edit question</h2>
         <label htmlFor="edit-text">Question content</label>
         <textarea

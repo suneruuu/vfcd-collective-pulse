@@ -97,7 +97,7 @@ export default function AdminGate({ children }) {
   return (
     <main className="admin-screen">
       <form className="admin-form" onSubmit={login}>
-        <p>Collective Pulse</p>
+        <p>FFFF Live Pulse</p>
         <h1>Question manager</h1>
         {state.loading ? (
           <p role="status">Checking access...</p>

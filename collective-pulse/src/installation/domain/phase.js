@@ -32,13 +32,13 @@ export function createPhase(runtime, { formatting }) {
       preview: runtime.pulsePreview,
       mainWidth: layout.mainW,
       label: timing.before
-        ? "COLLECTIVE PULSE STARTS IN"
+        ? "LIVE PULSE STARTS IN"
         : closing
           ? "THANK YOU FOR PARTICIPATING"
           : "TODAY PULSE STARTS IN",
       value: closing
         ? timing.complete
-          ? "COLLECTIVE PULSE COMPLETE"
+          ? "LIVE PULSE COMPLETED"
           : "NEXT PULSE TOMORROW \u00b7 " + String(CONFIG.OPEN_HOUR).padStart(2, "0") + ":00"
         : formatting.formatOpeningCountdown(timing.nextOpenMs - now),
       buttonHidden: timing.before || timing.active,

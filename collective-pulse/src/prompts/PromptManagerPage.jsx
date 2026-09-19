@@ -29,7 +29,7 @@ export function PromptManagerShell({
     <>
       <main className="queue-main">
         <header className="queue-heading">
-          <p>Collective Pulse</p>
+          <p>FFFF Live Pulse</p>
           <h1>Question Queue</h1>
           <div className="queue-meta">
             <span id="connection-status" role="status" data-state={connection.state}>

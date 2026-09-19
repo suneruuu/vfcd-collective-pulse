@@ -24,7 +24,7 @@ export function VoteAuthShell({ loading, configured, busy, error, onSignIn }) {
   return (
     <main className="vote-screen vote-auth-screen">
       <section className="vote-content vote-auth-content" aria-labelledby="vote-auth-title">
-        <p className="vote-auth-brand">Collective Pulse</p>
+        <p className="vote-auth-brand">FFFF Live Pulse</p>
         <h1 id="vote-auth-title">Sign in to vote</h1>
         {loading ? (
           <p role="status">Checking sign-in...</p>

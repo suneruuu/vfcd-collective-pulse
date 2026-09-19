@@ -135,7 +135,7 @@ export function createInstallation({
     canvas.elt.setAttribute("tabindex", "0");
     canvas.elt.setAttribute(
       "aria-label",
-      "Collective Pulse. Press left arrow for yes or right arrow for no.",
+      "FFFF Live Pulse. Press left arrow for yes or right arrow for no.",
     );
     p.pixelDensity(Math.min(pixelRatio, 2));
     p.frameRate(60);

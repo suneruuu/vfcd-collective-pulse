@@ -11,10 +11,10 @@ export default function App() {
   const vote = ["/vote", "/vote.html", "/vote/index.html"].includes(path);
   useEffect(() => {
     document.title = manager
-      ? "Question Queue \u2014 Collective Pulse"
+      ? "Question Queue \u2014 FFFF Live Pulse"
       : vote
-        ? "Vote \u2014 Collective Pulse"
-        : "Collective Pulse \u2014 Vietnam Creative Festival";
+        ? "Vote \u2014 FFFF Live Pulse"
+        : "FFFF Live Pulse \u2014 Vietnam Creative Festival";
   }, [manager, vote]);
   return manager ? (
     <AdminGate>

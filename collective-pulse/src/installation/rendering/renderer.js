@@ -39,13 +39,13 @@ export function createRenderer(
     p.textAlign(p.LEFT, p.TOP);
     p.textStyle(p.BOLD);
     p.textSize(20 * ui);
-    p.text("COLLECTIVE PULSE", x, 446 * layout.sy);
+    p.text("FFFF LIVE PULSE", x, 446 * layout.sy);
     p.textStyle(p.NORMAL);
     p.textSize(20 * ui);
     p.textLeading(27 * ui);
     p.textWrap(p.WORD);
     p.text(
-      "Vietnam's creative community is growing rapidly. Collective Pulse installation asks what kind of future we want to build for design in Vietnam.",
+      "Vietnam's creative community is growing rapidly. FFFF Live Pulse installation asks what kind of future we want to build for design in Vietnam.",
       x,
       485 * layout.sy,
       contentW,
