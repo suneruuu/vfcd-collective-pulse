@@ -23,7 +23,12 @@ export function createCamera(
         historyStartSecond: Math.min(CONFIG.OPEN_HOUR * 3600, firstSecond),
       };
     }
-    if (timing.before || timing.active) return timing;
+    if (timing.before) return timing;
+    if (timing.active)
+      return {
+        ...timing,
+        historyStartSecond: CONFIG.OPEN_HOUR * 3600,
+      };
     // Later mornings retain the previous day's completed pulse behind the blur.
     const dayIndex =
       timing.phase === "before-day" ? timing.displayDayIndex - 1 : timing.displayDayIndex;
@@ -80,19 +85,23 @@ export function createCamera(
   // CAMERA / SCROLLING
   // -----------------------------------------------------------------------------
 
+  function graphStartSecond(timing) {
+    return timing.historyStartSecond ?? CONFIG.OPEN_HOUR * 3600;
+  }
   function updateCamera(timing, graph) {
+    const minimumStart = graphStartSecond(timing);
     if (runtime.viewedDayIndex !== timing.displayDayIndex) {
       runtime.viewedDayIndex = timing.displayDayIndex;
-      runtime.viewStartSecond = 0;
+      runtime.viewStartSecond = minimumStart;
       runtime.followLive = !runtime.fitAll;
     }
     if (runtime.fitAll) {
-      runtime.viewStartSecond = timing.historyStartSecond ?? 0;
+      runtime.viewStartSecond = minimumStart;
       return;
     }
     const visibleSeconds = graph.w / viewport.secondWidthForView(graph, timing);
     if (runtime.followLive) {
-      runtime.viewStartSecond = Math.max(0, timing.liveSecond - visibleSeconds);
+      runtime.viewStartSecond = Math.max(minimumStart, timing.liveSecond - visibleSeconds);
     }
     runtime.viewStartSecond = constrainViewStart(runtime.viewStartSecond, timing, visibleSeconds);
   }
@@ -100,9 +109,10 @@ export function createCamera(
     const graph = viewport.getLayout().graph;
     const visibleSeconds =
       suppliedVisibleSeconds || graph.w / viewport.secondWidthForView(graph, timing);
+    const minimumStart = graphStartSecond(timing);
     const availableEnd = timing.liveSecond;
-    const maxStart = Math.max(0, availableEnd - visibleSeconds * 0.08);
-    return clamp(value, 0, maxStart);
+    const maxStart = Math.max(minimumStart, availableEnd - visibleSeconds * 0.08);
+    return clamp(value, minimumStart, maxStart);
   }
 
   // -----------------------------------------------------------------------------
@@ -112,16 +122,19 @@ export function createCamera(
   function zoomTimeline(factor, layout, timing, anchorX = null) {
     const graph = layout.graph;
     const oldWidth = viewport.secondWidthForView(graph, timing);
-    const oldStart = runtime.fitAll ? 0 : runtime.viewStartSecond;
+    const minimumStart = graphStartSecond(timing);
+    const oldStart = runtime.fitAll
+      ? minimumStart
+      : Math.max(minimumStart, runtime.viewStartSecond);
     const wasFollowingLive = !runtime.fitAll && runtime.followLive;
     const anchor = clamp(anchorX ?? graph.x + graph.w * 0.5, graph.x, graph.x + graph.w);
     const anchorSecond = oldStart + (anchor - graph.x) / oldWidth;
-    const minimumWidth = graph.w / CONFIG.DAY_SECONDS;
-    runtime.zoomSecondWidth = clamp(
-      oldWidth * factor,
-      minimumWidth,
-      CONFIG.MAX_SECOND_WIDTH * layout.ui,
+    const maximumWidth = CONFIG.MAX_SECOND_WIDTH * layout.ui;
+    const minimumWidth = Math.min(
+      maximumWidth,
+      graph.w / Math.max(1, timing.liveSecond - minimumStart),
     );
+    runtime.zoomSecondWidth = clamp(oldWidth * factor, minimumWidth, maximumWidth);
     runtime.fitAll = false;
     runtime.followLive = wasFollowingLive;
     if (runtime.followLive) {

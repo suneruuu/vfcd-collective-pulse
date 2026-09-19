@@ -24,9 +24,9 @@ export function createViewport(runtime, { p }) {
       mainW,
       information: {
         x: 1465 * sx,
-        y: 409 * sy,
+        y: 430 * sy,
         w: 455 * sx,
-        h: 671 * sy,
+        h: 650 * sy,
       },
       overview: {
         x: 1498 * sx,

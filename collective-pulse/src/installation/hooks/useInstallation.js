@@ -32,7 +32,8 @@ export function useInstallation(host) {
             ? createCloudConnection({
                 api: cloudApi,
                 onPulse: (data) => engine.applyCloudPulse(data),
-                onVotes: (records, personal, live) => engine.applyCloudVotes(records, personal, live),
+                onVotes: (records, personal, live) =>
+                  engine.applyCloudVotes(records, personal, live),
               })
             : null;
           const EngineClock = cloud
@@ -111,6 +112,7 @@ export function useInstallation(host) {
       sync?.stop();
       cleanupListeners.forEach((remove) => remove());
       if (engineRef.current?.runtime.state) engineRef.current.persistence.saveState();
+      engineRef.current?.audio.stop();
       instance?.remove();
       engineRef.current = null;
     };

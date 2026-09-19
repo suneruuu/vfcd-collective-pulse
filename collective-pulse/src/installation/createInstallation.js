@@ -11,6 +11,7 @@ import { createVoteSampler } from "./domain/voteSampler.js";
 import { createCanvasInput } from "./rendering/canvasInput.js";
 import { createController } from "./domain/controller.js";
 import { createNavigationHelper } from "./domain/navigationHelper.js";
+import { createInstallationAudio } from "./domain/audio.js";
 import { createRenderer } from "./rendering/renderer.js";
 import { createViewport } from "./rendering/viewport.js";
 import { createQueueCache } from "../services/queueCache.js";
@@ -21,6 +22,7 @@ import { getUiSnapshot } from "./uiSnapshot.js";
 export function createInstallation({
   p,
   storage,
+  documentRef = globalThis.document,
   onSnapshot = () => {},
   focusCanvas = () => {},
   pixelRatio = 1,
@@ -28,6 +30,7 @@ export function createInstallation({
   cloud = null,
 }) {
   const runtime = createRuntime();
+  const audio = createInstallationAudio({ documentRef });
   const navigationHelper = createNavigationHelper(runtime, { clock });
   const cache = createQueueCache(storage);
   const announce = (text) => {
@@ -78,6 +81,7 @@ export function createInstallation({
     clock,
     campaign,
     formatting,
+    documentRef,
     p,
     viewport,
     voting,
@@ -106,6 +110,7 @@ export function createInstallation({
   const input = {
     ...sampler,
     ...createCanvasInput(runtime, {
+      audio,
       clock,
       camera,
       campaign,
@@ -155,6 +160,7 @@ export function createInstallation({
     prompts.ensurePromptDay(timing, clock.now());
     input.resetInputSampling();
     navigationHelper.interact();
+    audio.startAmbient();
     focusCanvas();
     return canvas;
   }
@@ -172,8 +178,9 @@ export function createInstallation({
     renderer.updatePanelColor(timing);
     p.background(0);
     renderer.drawInformationPanel(layout, timing, now);
+    if (timing.active) renderer.drawRipples(layout, now);
+    else renderer.clearCreditsRipples();
     if (!timing.before) {
-      if (timing.active) renderer.drawRipples(layout, now);
       renderer.drawMainHeader(layout);
       renderer.drawDailyGraph(layout, graphTiming, now);
       if (timing.active) {
@@ -261,7 +268,10 @@ export function createInstallation({
       navigationHelper.toggle();
       focusCanvas();
     },
-    interactNavigationHelper: navigationHelper.interact,
+    interactNavigationHelper: () => {
+      audio.startAmbient();
+      navigationHelper.interact();
+    },
     setNavigationHelperHovered: navigationHelper.setHovered,
     togglePreview,
     selectDay: camera.selectOverviewDay,
@@ -288,6 +298,7 @@ export function createInstallation({
     renderer,
     controller,
     navigationHelper,
+    audio,
     constants: {
       CONFIG,
       YES,

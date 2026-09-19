@@ -43,10 +43,10 @@ const canvas = { elt: { setAttribute() {}, focus() {} }, parent() {} };
 const gradient = { addColorStop() {} };
 const drawingContext = {
   save() {},
-  restore() {},
+  restore: () => events.push({ type: "ctx-restore", args: [] }),
   beginPath() {},
   rect() {},
-  clip() {},
+  clip: () => events.push({ type: "ctx-clip", args: [] }),
   setLineDash() {},
   createRadialGradient: () => gradient,
   createLinearGradient: () => gradient,
@@ -188,27 +188,37 @@ assert.equal(layout.graph.stemBottom, 776);
 assert.equal(layout.graph.timestampY, 785);
 assert.deepEqual(JSON.parse(JSON.stringify(layout.information)), {
   x: 1465,
-  y: 409,
+  y: 430,
   w: 455,
-  h: 671,
+  h: 650,
 });
 assert.deepEqual(Array.from(layout.prompt.rows), [827, 869, 906, 943, 980]);
+const creditsCss = css.match(/#installation-credits\s*\{([^}]*)\}/)?.[1] || "";
 assert(
-  css.includes("#installation-credits") &&
-    css.includes("left: 0") &&
-    css.includes("bottom: 0") &&
-    css.includes("width: 100%") &&
-    css.includes("min-height: calc(63 * var(--sy))") &&
-    css.includes("background: #000") &&
-    css.includes("font-size: calc(8 * var(--ui))"),
-  "The credits must preserve the reference image's position, width, and type scale",
+  creditsCss.includes("left: 0") &&
+    creditsCss.includes("bottom: 0") &&
+    creditsCss.includes("width: 100%") &&
+    creditsCss.includes("min-height: calc(63 * var(--sy))") &&
+    creditsCss.includes("background-color: #000") &&
+    creditsCss.includes("background-image: var(--credits-ripples, none)") &&
+    creditsCss.includes("font-size: calc(8 * var(--ui))"),
+  "The credits section must keep a solid black base beneath the water drop",
 );
+run(
+  "ripples = [{ choice: YES, bornAt: Date.now() - 1200 }]; drawRipples(getLayout(), Date.now());",
+);
+assert(
+  nodes["installation-credits"].style.values["--credits-ripples"].includes("radial-gradient"),
+  "The active water drop must be visible in the credits background",
+);
+run("ripples = []; clearCreditsRipples();");
+assert.equal(nodes["installation-credits"].style.values["--credits-ripples"], "none");
 const heading = events.find((event) => event.value?.includes("annual Creative Festival?"));
 assert(heading, "The heading must match the supplied Creative Festival design");
 assert.equal(heading.fontSize, 84);
 assert.deepEqual(heading.args, [53, 39]);
 assert(
-  events.some((event) => event.type === "rect" && event.args.join(",") === "1465,409,455,671"),
+  events.some((event) => event.type === "rect" && event.args.join(",") === "1465,430,455,650"),
 );
 const zeroLabel = events.find((event) => event.type === "text" && event.value === "0");
 assert(zeroLabel, "The voting-balance y-axis must label zero");
@@ -227,8 +237,24 @@ assert(
   "The zero reference must span the graph at its midpoint",
 );
 assert(
-  events.some((event) => event.type === "circle" && event.args[1] === 542),
-  "A fresh empty session's live point must start at the centered zero",
+  events.some((event) => event.source === "/assets/live-cursor.svg"),
+  "A fresh empty session must show the live cursor",
+);
+const liveCursorIndex = events.findIndex((event) => event.source === "/assets/live-cursor.svg");
+const latestClipIndex = events.reduce(
+  (latest, event, index) => (event.type === "ctx-clip" && index < liveCursorIndex ? index : latest),
+  -1,
+);
+assert(
+  events.some(
+    (event, index) =>
+      event.type === "ctx-restore" && index > latestClipIndex && index < liveCursorIndex,
+  ),
+  "The live cursor's top dot must be drawn outside the graph clip",
+);
+assert(
+  !events.some((event) => event.type === "circle"),
+  "The main timeline must use only the cursor's top dot",
 );
 
 for (const choice of [1, -1]) {
@@ -367,6 +393,24 @@ context.mouseX = 300;
 context.mouseY = 400;
 assert.equal(run("mouseWheel({ deltaY: -100 })"), false);
 assert.equal(run("zoomSecondWidth"), previousZoom * run("CONFIG.ZOOM_FACTOR"));
+for (let index = 0; index < 32; index++) {
+  assert.equal(run("mouseWheel({ deltaY: 100 })"), false);
+}
+events.length = 0;
+run("draw();");
+assert.equal(
+  run("viewStartSecond"),
+  run("CONFIG.OPEN_HOUR * 3600"),
+  "maximum mouse-wheel zoom-out must stop at the opening boundary",
+);
+const wheelZoomTimestamps = events
+  .filter((event) => event.type === "text" && event.args[1] === 785)
+  .map((event) => event.value);
+assert.equal(wheelZoomTimestamps[0], "09:00:00");
+assert(!wheelZoomTimestamps.includes("00:00:00"), "mouse-wheel zoom-out must not show midnight");
+run(
+  "zoomSecondWidth = CONFIG.SECOND_WIDTH * CONFIG.ZOOM_FACTOR; fitAll = false; followLive = true;",
+);
 nodes["panel-toggle"].handlers.click();
 assert.equal(run("getLayout().graph.w"), 1371);
 events.length = 0;
@@ -487,7 +531,12 @@ for (const [w, h] of [
   );
   assert.equal(nodes["schedule-weekday"].textContent, "Monday");
   const waitingPanel = events.find((event) => event.type === "rect");
-  assert.deepEqual(waitingPanel.args, [1465 * sx, 409 * sy, 455 * sx, 672 * sy]);
+  assert.deepEqual(waitingPanel.args, [1465 * sx, 430 * sy, 455 * sx, 650 * sy]);
+  assert.equal(
+    cssNumber("#festival-schedule", "height", w, h),
+    run("getLayout().information.y"),
+    "the schedule and information panel must meet without overlapping",
+  );
   assert.equal(nodes["campaign-screen-label"].textContent, "COLLECTIVE PULSE STARTS IN");
   assert.equal(nodes["campaign-screen-value"].textContent, "00 : 42 : 18");
   assert.equal(nodes["view-pulse"].hidden, true, "the first opening must not show View pulse");
@@ -611,6 +660,20 @@ assert(
   "the original voting GUI must return at exactly 09:00",
 );
 assert(events.some((event) => event.value === "OVERVIEW" && event.fontSize === 20));
+nodes["view-fit"].handlers.click();
+testNow = new Date("2026-09-16T12:00:00+07:00").getTime();
+events.length = 0;
+run("draw();");
+assert.equal(
+  run("viewStartSecond"),
+  run("CONFIG.OPEN_HOUR * 3600"),
+  "the active fit-all graph must start at opening rather than midnight",
+);
+const fitAllTimestamps = events
+  .filter((event) => event.type === "text" && event.args[1] === 785)
+  .map((event) => event.value);
+assert.equal(fitAllTimestamps[0], "09:00:00");
+assert(!fitAllTimestamps.includes("00:00:00"), "fit-all must not label midnight");
 run(
   "fitAll = false; followLive = true; zoomSecondWidth = CONFIG.SECOND_WIDTH; state.votes.push([Date.now(), YES], [Date.now() + 1000, YES]); rebuildDerived();",
 );

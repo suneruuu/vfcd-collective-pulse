@@ -356,8 +356,7 @@ const checks = `
   assert(drawingEvents[0].args[3] === 31, "the existing idle-band thickness must remain unchanged at the initial scale");
   const pendingBand = drawingEvents.find((event) => event.type === "rect" && event.args[0] === layout.graph.x + 11 * CONFIG.SECOND_WIDTH);
   assert(pendingBand.args[1] === drawnNo.args[1] && pendingBand.args[3] === drawnNo.args[3], "pending must continue the last vote's exact top edge and height, not center on its endpoint");
-  const leadDot = drawingEvents.find((event) => event.type === "circle");
-  assert(leadDot.args[1] === baseline - 5, "the live point must use the cumulative five-pixel value");
+  assert(!drawingEvents.some((event) => event.type === "circle"), "the live trace must not add a second cursor dot");
   drawingEvents.length = 0;
   drawGraphSecondStems(layout, { liveSecond: 12 }, day, 12, baseline, 1);
   const voteStem = drawingEvents.find((event) => event.type === "line" && event.args[0] === layout.graph.x + 10 * CONFIG.SECOND_WIDTH);
@@ -429,7 +428,7 @@ const checks = `
     const carriedBand = drawingEvents.find((event) => event.type === "rect");
     const expectedBand = voteBandBounds(derived.days[0].finalVoteStartValue, ending, baseline, scale, layout.ui);
     assert(carriedBand.args[1] === expectedBand.y && carriedBand.args[3] === expectedBand.h, "the overnight idle band must retain the previous vote's exact bounds");
-    assert(drawingEvents.find((event) => event.type === "circle").args[1] === baseline - ending * scale, "a new empty day's live point must remain at yesterday's endpoint");
+    assert(!drawingEvents.some((event) => event.type === "circle"), "an empty day must not add a second cursor dot");
     drawingEvents.length = 0;
     drawGraphSecondStems(layout, { liveSecond: viewStartSecond + 2 }, derived.days[2], viewStartSecond + 2, baseline, scale);
     assert(drawingEvents[0].args[1] === baseline - ending * scale, "stems before the new day's first vote must start at the inherited balance");
@@ -463,6 +462,7 @@ const checks = `
     assert(getGraphTiming(waiting).displayDayIndex === Math.max(0, dayIndex - 1), "later mornings must retain the previous completed day, never show an empty current-day graph");
     assert(waiting.preOpening && !waiting.active && waiting.nextOpenMs === opening && waiting.displayDayIndex === dayIndex, "each day must wait until 09:00 and keep the correct calendar date");
     assert(getCampaignTiming(opening).active && getCampaignTiming(opening).activeDayIndex === dayIndex, "each day must open at exactly 09:00 Vietnam time");
+    assert(getGraphTiming(getCampaignTiming(opening)).historyStartSecond === CONFIG.OPEN_HOUR * 3600, "an active day''s fit-all graph must start at opening, never midnight");
     assert(getCampaignTiming(closing - 1).active, "each day must stay open up to 17:59:59.999");
     const closed = getCampaignTiming(closing);
     assert(closed.phase === "after-day" && getGraphTiming(closed).displayDayIndex === dayIndex, "each closing must keep its completed day under the thank-you screen");

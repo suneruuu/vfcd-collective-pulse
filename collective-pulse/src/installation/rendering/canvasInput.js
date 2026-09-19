@@ -1,7 +1,7 @@
 import { CONFIG, YES, NO } from "../../config/installation.js";
 export function createCanvasInput(
   runtime,
-  { camera, campaign, p, viewport, sampler, clock = Date },
+  { audio, camera, campaign, p, viewport, sampler, clock = Date },
 ) {
   // -----------------------------------------------------------------------------
   // INPUT
@@ -9,6 +9,7 @@ export function createCanvasInput(
 
   function keyPressed(event) {
     if (event && event.repeat) return false;
+    audio.startAmbient();
     const timing = campaign.getCampaignTiming(clock.now());
     if (!timing.active && !runtime.pulsePreview && p.keyCode !== 37 && p.keyCode !== 39)
       return false;
@@ -33,11 +34,11 @@ export function createCanvasInput(
       return false;
     }
     if (p.keyCode === 37) {
-      sampler.queueDirection(YES);
+      if (sampler.queueDirection(YES)) audio.playChoice(YES);
       return false;
     }
     if (p.keyCode === 39) {
-      sampler.queueDirection(NO);
+      if (sampler.queueDirection(NO)) audio.playChoice(NO);
       return false;
     }
     return true;
@@ -50,6 +51,7 @@ export function createCanvasInput(
     return false;
   }
   function mousePressed() {
+    audio.startAmbient();
     const campaignTiming = campaign.getCampaignTiming(clock.now());
     const layout = viewport.getLayout();
     const day = camera.overviewDayAtPoint(layout, p.mouseX, p.mouseY, campaignTiming);

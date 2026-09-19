@@ -89,6 +89,7 @@ exports.installContext = (context) => {
   const installation = createInstallation({
     p: context,
     storage: context.localStorage,
+    documentRef: context.document,
     clock: context.Date || Date,
     pixelRatio: context.window?.devicePixelRatio || 1,
     onSnapshot: (snapshot) => applySnapshot(context, snapshot),

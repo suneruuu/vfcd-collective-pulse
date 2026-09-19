@@ -3,7 +3,7 @@ import { clamp } from "../../../shared/math.js";
 import { assetUrl } from "../../services/paths.js";
 export function createRenderer(
   runtime,
-  { campaign, formatting, p, viewport, voting, clock = Date },
+  { campaign, documentRef, formatting, p, viewport, voting, clock = Date },
 ) {
   function preload() {
     const assetFiles = {
@@ -31,7 +31,7 @@ export function createRenderer(
     const panel = layout.information;
     p.noStroke();
     p.fill(timing.before ? CONFIG.NEUTRAL_PANEL_COLOR : runtime.panelColor);
-    p.rect(panel.x, panel.y, panel.w, timing.active ? panel.h : 672 * layout.sy);
+    p.rect(panel.x, panel.y, panel.w, panel.h);
     const x = 1498 * layout.sx;
     const contentW = 389 * layout.sx;
     const ui = layout.ui;
@@ -86,7 +86,7 @@ export function createRenderer(
     p.textStyle(p.BOLD);
     p.textSize(20 * ui);
     p.textAlign(p.RIGHT, p.TOP);
-    p.text(formatting.formatCampaignElapsed(now), 1887 * layout.sx, 838 * layout.sy);
+    p.text(formatting.formatCampaignElapsed(now), 1887 * layout.sx, 808 * layout.sy);
     p.textAlign(p.LEFT, p.TOP);
     p.textStyle(p.NORMAL);
   }
@@ -242,8 +242,8 @@ export function createRenderer(
     ctx.clip();
     drawGraphSecondStems(layout, timing, dayData, viewEnd, baseline, yScale);
     drawVoteTrace(layout, timing, dayData, viewEnd, baseline, yScale);
-    if (timing.active !== false) drawLiveCursor(layout, timing, baseline);
     ctx.restore();
+    if (timing.active !== false) drawLiveCursor(layout, timing, baseline);
     drawGraphTimestamps(layout, timing, dayData, viewEnd);
   }
   function graphVerticalScale(layout, dayData, baseline) {
@@ -388,17 +388,6 @@ export function createRenderer(
         lastVoteStartValue,
       );
     }
-    if (
-      timing.active !== false &&
-      timing.liveSecond >= runtime.viewStartSecond &&
-      timing.liveSecond <= viewEnd
-    ) {
-      const x = viewport.xForSecond(timing.liveSecond, graph);
-      const y = baseline - dayData.finalValue * yScale;
-      p.noStroke();
-      p.fill(248);
-      p.circle(x, y, 9 * layout.ui);
-    }
   }
   function choiceBarBounds(second, barIndex, barCount) {
     return {
@@ -507,14 +496,25 @@ export function createRenderer(
   // PROMPTS / VOTE WATER-DROP BACKGROUND
   // -----------------------------------------------------------------------------
 
+  function creditsElement() {
+    return documentRef?.getElementById("installation-credits");
+  }
+  function clearCreditsRipples() {
+    creditsElement()?.style.setProperty("--credits-ripples", "none");
+  }
   function drawRipples(layout, nowMillis) {
     runtime.ripples = runtime.ripples.filter(
       (ripple) => nowMillis - ripple.bornAt < CONFIG.VOTE_RIPPLE_MS,
     );
-    if (runtime.ripples.length === 0) return;
+    if (runtime.ripples.length === 0) {
+      clearCreditsRipples();
+      return;
+    }
     // The reference anchors the drop below the lower-left part of the display.
     const centerX = 300 * layout.sx;
     const centerY = 1156 * layout.sy;
+    const creditsCenterY = centerY - (p.height - 63 * layout.sy);
+    const creditsGradients = [];
     const ctx = p.drawingContext;
     ctx.save();
     ctx.beginPath();
@@ -526,6 +526,10 @@ export function createRenderer(
       const eased = 1 - Math.pow(1 - progress, 3);
       const radius = p.lerp(18, CONFIG.VOTE_RIPPLE_MAX_RADIUS * layout.ui, eased);
       const opacity = Math.pow(1 - progress, 1.35) * 0.92;
+      const channels = ripple.choice === YES ? "6, 255, 205" : "255, 109, 5";
+      creditsGradients.push(
+        `radial-gradient(circle ${radius.toFixed(3)}px at ${centerX.toFixed(3)}px ${creditsCenterY.toFixed(3)}px, rgba(${channels}, ${opacity.toFixed(4)}) 0%, rgba(${channels}, 0) 100%)`,
+      );
       const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
       if (ripple.choice === YES) {
         gradient.addColorStop(0, CONFIG.YES_COLOR);
@@ -539,6 +543,7 @@ export function createRenderer(
       ctx.fillRect(centerX - radius, centerY - radius, radius * 2, radius * 2);
     }
     ctx.restore();
+    creditsElement()?.style.setProperty("--credits-ripples", creditsGradients.join(", "));
   }
   function drawPrompts(layout, timing, now) {
     const promptLayout = layout.prompt;
@@ -633,6 +638,7 @@ export function createRenderer(
     drawLiveCursor,
     drawGraphTimestamps,
     choiceColor,
+    clearCreditsRipples,
     drawRipples,
     drawPrompts,
     easeOutCubic,

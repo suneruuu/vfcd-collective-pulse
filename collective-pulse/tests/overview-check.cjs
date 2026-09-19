@@ -413,7 +413,15 @@ for (const [width, height] of [
   const elapsed = events.find(
     (event) => event.type === "text" && event.args[0] === run("formatCampaignElapsed(Date.now())"),
   );
-  assert.deepEqual(elapsed.args.slice(1), [1887 * sx, 838 * sy]);
+  const overviewHeading = events.find(
+    (event) => event.type === "text" && event.args[0] === "OVERVIEW",
+  );
+  assert.deepEqual(elapsed.args.slice(1), [1887 * sx, 808 * sy]);
+  assert.equal(
+    elapsed.args[2],
+    overviewHeading.args[2],
+    "Elapsed time must align horizontally with the overview heading",
+  );
   assert(
     elapsed.args[2] + 20 * Math.min(sx, sy) < 874 * sy,
     "Elapsed time must stay above the plot",

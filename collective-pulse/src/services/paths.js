@@ -7,3 +7,7 @@ export function appPath(pathname, base = "/") {
 export function assetUrl(name) {
   return (import.meta.env?.BASE_URL || "/") + "assets/" + name;
 }
+
+export function soundUrl(name) {
+  return (import.meta.env?.BASE_URL || "/") + "sounds/" + name;
+}
