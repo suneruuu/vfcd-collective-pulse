@@ -39,6 +39,32 @@ canvas {
   -webkit-user-select: none;
 }
 
+#installation-credits {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  min-height: calc(63 * var(--sy));
+  padding: calc(13 * var(--sy)) calc(32 * var(--sx)) calc(4 * var(--sy)) calc(53 * var(--sx));
+  margin: 0;
+  background: #000;
+  color: rgb(255 255 255 / 40%);
+  font-size: calc(8 * var(--ui));
+  font-weight: 400;
+  line-height: normal;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+
+#installation-credits em {
+  font-style: italic;
+}
+
+#installation-credits strong {
+  color: rgb(255 255 255 / 80%);
+  font-weight: 700;
+}
+
 #view-controls {
   --control-offset: 0px;
   position: absolute;
@@ -281,28 +307,28 @@ canvas {
 }
 
 #campaign-screen-label {
-  top: calc(859 * var(--sy));
+  top: calc(796 * var(--sy));
   font-size: calc(24 * var(--ui));
 }
 
 #campaign-screen-value {
-  top: calc(893 * var(--sy));
+  top: calc(830 * var(--sy));
   font-size: calc(84 * var(--ui));
   white-space: nowrap;
 }
 
 #campaign-screen[data-phase="before-event"] #campaign-screen-label {
-  top: calc(914 * var(--sy));
+  top: calc(851 * var(--sy));
 }
 
 #campaign-screen[data-phase="before-event"] #campaign-screen-value {
-  top: calc(948 * var(--sy));
+  top: calc(885 * var(--sy));
 }
 
 #view-pulse {
   position: absolute;
   left: calc((var(--main-width) - 139 * var(--sx)) / 2);
-  top: calc(1008 * var(--sy));
+  top: calc(945 * var(--sy));
   width: calc(139 * var(--sx));
   height: calc(33 * var(--sy));
   padding: 0;

@@ -181,7 +181,7 @@ export function createRenderer(
     p.fill(0);
     p.noStroke();
     for (let day = 0; day < CONFIG.CAMPAIGN_DAYS; day++) {
-      p.text(`D${day + 1}`, x + (day * w) / CONFIG.CAMPAIGN_DAYS, 1021 * layout.sy);
+      p.text(`D${day + 1}`, x + (day * w) / CONFIG.CAMPAIGN_DAYS, 968 * layout.sy);
     }
     if (runtime.selectedOverviewDay !== null) {
       p.stroke(0);
@@ -189,9 +189,9 @@ export function createRenderer(
       const selectedX = x + (runtime.selectedOverviewDay * w) / CONFIG.CAMPAIGN_DAYS;
       p.line(
         selectedX,
-        1047 * layout.sy,
+        1000 * layout.sy,
         selectedX + Math.min(24 * layout.ui, w / CONFIG.CAMPAIGN_DAYS),
-        1047 * layout.sy,
+        1000 * layout.sy,
       );
       p.noStroke();
     }

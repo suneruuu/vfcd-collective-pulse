@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { useInstallation } from "./hooks/useInstallation.js";
 import { InstallationControls } from "./components/InstallationControls.jsx";
+import { InstallationCredits } from "./components/InstallationCredits.jsx";
 import { TimedScreen } from "./components/TimedScreen.jsx";
 import { SchedulePanel } from "../schedule/SchedulePanel.jsx";
 export const INITIAL_SNAPSHOT = {
@@ -26,6 +27,7 @@ export function InstallationShell({ snapshot = INITIAL_SNAPSHOT, invoke = () => 
         phase={snapshot.phase}
         selectedDayIndex={snapshot.selectedOverviewDay}
       />
+      <InstallationCredits />
       <InstallationControls snapshot={snapshot} invoke={invoke} />
       {snapshot.cloudStatus && (
         <p className="cloud-status" role="status">

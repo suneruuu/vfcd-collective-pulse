@@ -41,7 +41,7 @@ export function createViewport(runtime, { p }) {
         lineX: 138 * sx,
         questionX: 228 * sx,
         w: mainW - 281 * sx,
-        rows: [872, 914, 951, 988, 1025].map((y) => y * sy),
+        rows: [827, 869, 906, 943, 980].map((y) => y * sy),
       },
     };
   }

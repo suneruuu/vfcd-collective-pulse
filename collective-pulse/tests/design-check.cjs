@@ -192,7 +192,17 @@ assert.deepEqual(JSON.parse(JSON.stringify(layout.information)), {
   w: 455,
   h: 671,
 });
-assert.deepEqual(Array.from(layout.prompt.rows), [872, 914, 951, 988, 1025]);
+assert.deepEqual(Array.from(layout.prompt.rows), [827, 869, 906, 943, 980]);
+assert(
+  css.includes("#installation-credits") &&
+    css.includes("left: 0") &&
+    css.includes("bottom: 0") &&
+    css.includes("width: 100%") &&
+    css.includes("min-height: calc(63 * var(--sy))") &&
+    css.includes("background: #000") &&
+    css.includes("font-size: calc(8 * var(--ui))"),
+  "The credits must preserve the reference image's position, width, and type scale",
+);
 const heading = events.find((event) => event.value?.includes("annual Creative Festival?"));
 assert(heading, "The heading must match the supplied Creative Festival design");
 assert.equal(heading.fontSize, 84);
@@ -481,8 +491,8 @@ for (const [w, h] of [
   assert.equal(nodes["campaign-screen-label"].textContent, "COLLECTIVE PULSE STARTS IN");
   assert.equal(nodes["campaign-screen-value"].textContent, "00 : 42 : 18");
   assert.equal(nodes["view-pulse"].hidden, true, "the first opening must not show View pulse");
-  assert.equal(cssNumber(firstLabel, "top", w, h), 914 * sy);
-  assert.equal(cssNumber(firstValue, "top", w, h), 948 * sy);
+  assert.equal(cssNumber(firstLabel, "top", w, h), 851 * sy);
+  assert.equal(cssNumber(firstValue, "top", w, h), 885 * sy);
   assert.equal(cssNumber("#campaign-screen-label", "font-size", w, h), 24 * ui);
   assert.equal(cssNumber("#campaign-screen-value", "font-size", w, h), 84 * ui);
   assert.equal(cssNumber("#campaign-screen p", "width", w, h) / 2, 732 * sx);
@@ -552,10 +562,10 @@ for (const [w, h] of [
     6,
     "all seven days must remain separated while voting is closed",
   );
-  assert.equal(cssNumber("#campaign-screen-label", "top", w, h), 859 * sy);
-  assert.equal(cssNumber("#campaign-screen-value", "top", w, h), 893 * sy);
+  assert.equal(cssNumber("#campaign-screen-label", "top", w, h), 796 * sy);
+  assert.equal(cssNumber("#campaign-screen-value", "top", w, h), 830 * sy);
   assert.equal(cssNumber("#view-pulse", "left", w, h), 663 * sx);
-  assert.equal(cssNumber("#view-pulse", "top", w, h), 1008 * sy);
+  assert.equal(cssNumber("#view-pulse", "top", w, h), 945 * sy);
   assert.equal(cssNumber("#view-pulse", "width", w, h), 139 * sx);
   assert.equal(cssNumber("#view-pulse", "height", w, h), 33 * sy);
   assert.equal(cssNumber("#view-pulse img", "left", w, h) + 1, 14 * sx);
@@ -833,9 +843,9 @@ for (const [w, h] of [
         (event) =>
           event.type === "line" &&
           event.args[0] === selectedX &&
-          event.args[1] === 1047 * sy &&
+          event.args[1] === 1000 * sy &&
           event.args[2] === selectedX + 24 * ui &&
-          event.args[3] === 1047 * sy,
+          event.args[3] === 1000 * sy,
       ),
       "only the selected day needs an understated underline",
     );

@@ -275,6 +275,13 @@ function overviewScheduleChecks() {
 
 function reactChecks() {
   const collapsed = fixtures.installationMarkup({ navigationHelperVisible: false });
+  assert(collapsed.includes('id="installation-credits"'));
+  assert(collapsed.includes('aria-label="Audio credits"'));
+  assert(
+    collapsed.includes("Beep Touch.wav by <em>IndigoRay</em> | https://freesound.org/s/339133/"),
+  );
+  assert(collapsed.includes("Miền Quê_Gió Thổi Qua Cánh Đồng Lúa_Phú Yên 2026"));
+  assert(collapsed.includes("rung_mua-he-buoi-trua-gio-nhe-con-trung-keu"));
   assert(
     /id="navigation-helper"[^>]*data-visible="false"[^>]*aria-hidden="true"[^>]*inert=""/.test(
       collapsed,
