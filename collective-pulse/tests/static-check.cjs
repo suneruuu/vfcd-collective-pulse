@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const load = require("./helpers/load-module.cjs");
 const dist = path.resolve(__dirname, "../dist");
 const html = fs.readFileSync(path.join(dist, "index.html"), "utf8");
 const base = process.env.VITE_BASE_PATH || "/";
@@ -29,6 +30,24 @@ const scripts = files.filter((file) => /^index-.*\.js$/.test(file));
 assert(
   scripts.some((file) => fs.readFileSync(path.join(dist, "assets", file), "utf8").includes(base)),
   "The app must use the same base path as its entry pages",
+);
+const { createFrontendHandler } = load("server/http/serveFrontend.js");
+let soundHeaders;
+createFrontendHandler(dist)(
+  { method: "HEAD" },
+  {
+    writeHead(status, headers) {
+      assert.equal(status, 200);
+      soundHeaders = headers;
+    },
+    end() {},
+  },
+  new URL("https://example.com/sounds/VFCD_Background%20Music.mp3"),
+);
+assert.equal(soundHeaders["Content-Type"], "audio/mpeg");
+assert.equal(
+  Number(soundHeaders["Content-Length"]),
+  fs.statSync(path.join(dist, "sounds", "VFCD_Background Music.mp3")).size,
 );
 console.log(
   "Static checks passed: voting and manager entries, script/style paths, and original display assets under " +

@@ -1,5 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cloudEnabled, supabase } from "../services/cloudApi.js";
+import { createVoteAudio } from "./audio.js";
+import { VoteAudioContext } from "./VoteAudioContext.js";
+import {
+  VOTE_AUTH_MESSAGE,
+  beginVoteOAuth,
+  completeVoteAuthPopup,
+  isVoteAuthPopup,
+} from "./popupAuth.js";
 
 export function voteRedirectUrl(
   location = window.location,
@@ -55,6 +63,15 @@ export default function VoteAuthGate({ children }) {
     error: callbackError || (cloudEnabled ? "" : "Online voting has not been configured."),
   });
   const [busy, setBusy] = useState(false);
+  const [popupCallback] = useState(() => isVoteAuthPopup());
+  const popupRef = useRef(null);
+  const popupTimerRef = useRef(null);
+  const preparedAudioRef = useRef(null);
+
+  function discardPreparedAudio() {
+    preparedAudioRef.current?.stop();
+    preparedAudioRef.current = null;
+  }
 
   useEffect(() => {
     document.body.classList.add("vote-page");
@@ -81,8 +98,16 @@ export default function VoteAuthGate({ children }) {
       });
     }
 
-    const subscription = supabase?.auth.onAuthStateChange((_event, session) => {
+    const subscription = supabase?.auth.onAuthStateChange((event, session) => {
       generation++;
+      if (event === "SIGNED_OUT") discardPreparedAudio();
+      if (session && popupRef.current) {
+        popupRef.current.close();
+        popupRef.current = null;
+        clearInterval(popupTimerRef.current);
+        popupTimerRef.current = null;
+        setBusy(false);
+      }
       if (active)
         setState((current) => ({
           loading: false,
@@ -99,19 +124,105 @@ export default function VoteAuthGate({ children }) {
     };
   }, [callbackError]);
 
+  useEffect(() => {
+    if (popupCallback || state.loading || state.session || !supabase || preparedAudioRef.current)
+      return;
+    preparedAudioRef.current = createVoteAudio({ initialVolume: 0.001 });
+  }, [popupCallback, state.loading, state.session]);
+
+  useEffect(() => () => discardPreparedAudio(), []);
+
+  useEffect(() => {
+    if (popupCallback) return;
+    const onPopupMessage = (event) => {
+      if (
+        event.origin !== window.location.origin ||
+        event.source !== popupRef.current ||
+        event.data?.type !== VOTE_AUTH_MESSAGE
+      )
+        return;
+      popupRef.current?.close();
+      popupRef.current = null;
+      clearInterval(popupTimerRef.current);
+      popupTimerRef.current = null;
+      setBusy(false);
+      if (event.data.error) {
+        discardPreparedAudio();
+        setState((current) => ({ ...current, error: event.data.error }));
+        return;
+      }
+      const tokens = event.data.tokens;
+      if (!tokens?.access_token || !tokens?.refresh_token) {
+        discardPreparedAudio();
+        setState((current) => ({
+          ...current,
+          error: "Cannot complete Google sign-in. Try again.",
+        }));
+        return;
+      }
+      supabase.auth
+        .setSession(tokens)
+        .then(({ error }) => {
+          if (error) {
+            discardPreparedAudio();
+            setState((current) => ({ ...current, error: error.message }));
+          }
+        })
+        .catch(() => {
+          discardPreparedAudio();
+          setState((current) => ({
+            ...current,
+            error: "Cannot complete Google sign-in. Try again.",
+          }));
+        });
+    };
+    window.addEventListener("message", onPopupMessage);
+    return () => {
+      window.removeEventListener("message", onPopupMessage);
+      clearInterval(popupTimerRef.current);
+    };
+  }, [popupCallback]);
+
+  useEffect(() => {
+    if (!popupCallback || state.loading || (!state.session && !state.error)) return;
+    completeVoteAuthPopup({ session: state.session, error: state.error });
+  }, [popupCallback, state.loading, state.session, state.error]);
+
   async function signIn() {
     if (!supabase || busy) return;
     setBusy(true);
     setState((current) => ({ ...current, error: "" }));
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: voteRedirectUrl() },
+      const { popup, error } = await beginVoteOAuth({
+        auth: supabase.auth,
+        redirectTo: voteRedirectUrl(),
+        onBeforePopup: () => {
+          if (!preparedAudioRef.current)
+            preparedAudioRef.current = createVoteAudio({ initialVolume: 0.001 });
+          preparedAudioRef.current.start();
+        },
+        onPopupUnavailable: discardPreparedAudio,
       });
-      if (error) setState((current) => ({ ...current, error: error.message }));
+      if (error) {
+        discardPreparedAudio();
+        setState((current) => ({ ...current, error: error.message }));
+        setBusy(false);
+      } else if (popup) {
+        popupRef.current = popup;
+        popupTimerRef.current = setInterval(() => {
+          if (!popup.closed || !document.hasFocus()) return;
+          clearInterval(popupTimerRef.current);
+          popupTimerRef.current = null;
+          if (popupRef.current === popup) {
+            popupRef.current = null;
+            discardPreparedAudio();
+            setBusy(false);
+          }
+        }, 1000);
+      }
     } catch {
+      discardPreparedAudio();
       setState((current) => ({ ...current, error: "Cannot connect to Google. Try again." }));
-    } finally {
       setBusy(false);
     }
   }
@@ -130,6 +241,13 @@ export default function VoteAuthGate({ children }) {
     }
   }
 
+  if (popupCallback)
+    return (
+      <main className="vote-screen">
+        <p role="status">Finishing Google sign-in...</p>
+      </main>
+    );
+
   if (!state.session)
     return (
       <VoteAuthShell
@@ -143,7 +261,9 @@ export default function VoteAuthGate({ children }) {
 
   return (
     <>
-      {children}
+      <VoteAudioContext.Provider value={preparedAudioRef.current}>
+        {children}
+      </VoteAudioContext.Provider>
       <button className="vote-signout" type="button" disabled={busy} onClick={signOut}>
         {busy ? "Signing out..." : "Sign out"}
       </button>

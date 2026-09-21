@@ -5,6 +5,7 @@ const load = require("./helpers/load-module.cjs");
 
 const { YES, NO } = load("src/config/installation.js");
 const { createInstallationAudio } = load("src/installation/domain/audio.js");
+const { createVoteAudio } = load("src/vote/audio.js");
 const { createCanvasInput } = load("src/installation/rendering/canvasInput.js");
 const { soundUrl } = load("src/services/paths.js");
 
@@ -91,12 +92,156 @@ assert.deepEqual(
 
 audio.stop();
 assert(tracks.every((track) => track.pauseCount === 1 && track.currentTime === 0));
+
+async function voteAudioChecks() {
+  const voteTracks = [];
+  const statuses = [];
+  let allowPlayback = false;
+  const voteAudio = createVoteAudio({
+    documentRef: {
+      createElement(type) {
+        assert.equal(type, "audio");
+        const track = {
+          currentTime: 7,
+          paused: true,
+          playCount: 0,
+          pauseCount: 0,
+          play() {
+            this.playCount++;
+            if (!allowPlayback)
+              return Promise.reject(new DOMException("Blocked", "NotAllowedError"));
+            this.paused = false;
+            return Promise.resolve();
+          },
+          pause() {
+            this.pauseCount++;
+            this.paused = true;
+          },
+        };
+        voteTracks.push(track);
+        return track;
+      },
+    },
+    onStatusChange: (status) => statuses.push(status),
+    initialVolume: 0.001,
+  });
+  assert.equal(voteTracks.length, 1, "The vote page loads only the ambient track");
+  assert.equal(voteTracks[0].src, "/sounds/VFCD_Background Music.mp3");
+  assert.equal(voteTracks[0].loop, true);
+  assert.equal(voteTracks[0].volume, 0.001);
+  voteAudio.setVolume(0.4);
+  assert.equal(voteTracks[0].volume, 0.4);
+  voteAudio.start();
+  await new Promise(setImmediate);
+  assert.equal(voteAudio.getStatus(), "blocked", "Autoplay rejection must be visible");
+  allowPlayback = true;
+  voteAudio.start();
+  await new Promise(setImmediate);
+  assert.equal(voteAudio.getStatus(), "playing", "A later tap can start blocked audio");
+  assert.equal(voteTracks[0].playCount, 2);
+  voteAudio.start();
+  assert.equal(voteTracks[0].playCount, 2, "Playing audio must not restart");
+  voteAudio.setEnabled(false);
+  assert.equal(voteAudio.isEnabled(), false);
+  assert.equal(voteAudio.getStatus(), "off");
+  assert.equal(voteTracks[0].pauseCount, 1);
+  voteAudio.start();
+  assert.equal(voteTracks[0].playCount, 2, "Muted audio stays paused during vote interactions");
+  voteAudio.setEnabled(true);
+  await new Promise(setImmediate);
+  assert.equal(voteTracks[0].playCount, 3, "Unmuting resumes playback");
+  assert.equal(voteAudio.getStatus(), "playing");
+  voteAudio.stop();
+  assert.equal(voteTracks[0].currentTime, 0);
+  assert.equal(voteTracks[0].pauseCount, 2);
+  assert.deepEqual(statuses, [
+    "starting",
+    "blocked",
+    "starting",
+    "playing",
+    "off",
+    "starting",
+    "playing",
+  ]);
+
+  let gain;
+  let contextClosed = false;
+  const mobileTrack = {
+    paused: true,
+    currentTime: 3,
+    get volume() {
+      return 1;
+    },
+    set volume(_) {},
+    play() {
+      this.paused = false;
+      return Promise.resolve();
+    },
+    pause() {
+      this.paused = true;
+    },
+  };
+  const mobileAudio = createVoteAudio({
+    documentRef: {
+      createElement: () => mobileTrack,
+      defaultView: {
+        AudioContext: class {
+          destination = {};
+          createMediaElementSource() {
+            return { connect() {} };
+          }
+          createGain() {
+            gain = { gain: { value: 1 }, connect() {} };
+            return gain;
+          }
+          resume() {
+            return Promise.resolve();
+          }
+          close() {
+            contextClosed = true;
+            return Promise.resolve();
+          }
+        },
+      },
+    },
+    initialVolume: 0.001,
+  });
+  mobileAudio.start();
+  await new Promise(setImmediate);
+  await new Promise(setImmediate);
+  assert.equal(mobileAudio.getStatus(), "playing");
+  assert.equal(gain.gain.value, 0.001, "Mobile login audio must stay quiet");
+  mobileAudio.setVolume(0.4);
+  assert.equal(gain.gain.value, 0.4, "The same track reaches normal volume after login");
+  mobileAudio.stop();
+  assert(contextClosed);
+}
 assert.equal(soundUrl("VFCD_Yes.wav"), "/sounds/VFCD_Yes.wav");
 
-for (const filename of ["VFCD_Background Music.wav", "VFCD_Yes.wav", "VFCD_No.wav"]) {
+for (const filename of [
+  "VFCD_Background Music.wav",
+  "VFCD_Background Music.mp3",
+  "VFCD_Yes.wav",
+  "VFCD_No.wav",
+]) {
   assert(fs.statSync(path.join(__dirname, "..", "public", "sounds", filename)).size > 0);
 }
 
-console.log(
-  "Audio checks passed: looping ambience, immediate YES/NO routing, cleanup, and assets.",
-);
+const originalAmbientBytes = fs.statSync(
+  path.join(__dirname, "..", "public", "sounds", "VFCD_Background Music.wav"),
+).size;
+const voteAmbientBytes = fs.statSync(
+  path.join(__dirname, "..", "public", "sounds", "VFCD_Background Music.mp3"),
+).size;
+assert(voteAmbientBytes < originalAmbientBytes / 10, "Vote music must load promptly");
+
+voteAudioChecks()
+  .then(() =>
+    console.log(
+      "Audio checks passed: looping ambience, browser-blocked playback, mute control, cleanup, and assets.",
+    ),
+  )
+  .catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });

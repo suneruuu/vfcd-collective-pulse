@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { cloudApi } from "../services/cloudApi.js";
 import { createCloudConnection, campaignIsActive } from "../services/cloudConnection.js";
+import { createVoteAudio } from "./audio.js";
+import { VoteAudioContext } from "./VoteAudioContext.js";
 import { createResponseInput } from "./responseInput.js";
 import "./vote.css";
 
@@ -9,9 +11,38 @@ const authenticatedVoteApi = Object.freeze({
   submitVotes: (...args) => cloudApi.submitAuthenticatedVotes(...args),
 });
 
-export function VoteShell({ enabled, message = "", status = "", input }) {
+export function VoteShell({
+  enabled,
+  message = "",
+  status = "",
+  input,
+  soundStatus = "playing",
+  onToggleSound,
+}) {
+  const soundBlocked = soundStatus === "blocked";
+  const soundOn = soundStatus === "playing";
   return (
     <main className="vote-screen">
+      <button
+        className="vote-audio-toggle"
+        type="button"
+        aria-label={soundBlocked ? "Start background sound" : "Background sound"}
+        aria-pressed={soundOn}
+        data-needs-gesture={soundBlocked}
+        onClick={onToggleSound}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M3 9v6h4l5 4V5L7 9H3Z" />
+          {soundOn ? (
+            <>
+              <path d="M16 9a4 4 0 0 1 0 6" />
+              <path d="M19 6a8 8 0 0 1 0 12" />
+            </>
+          ) : (
+            <path d="m16 9 5 6m0-6-5 6" />
+          )}
+        </svg>
+      </button>
       <section className="vote-content" aria-labelledby="vote-question">
         <h1 id="vote-question">
           Does Vietnam
@@ -83,6 +114,9 @@ export default function VotePage({ api = authenticatedVoteApi }) {
     connection.getSnapshot,
   );
   const [, tick] = useState(0);
+  const [soundStatus, setSoundStatus] = useState("starting");
+  const preparedAudio = useContext(VoteAudioContext);
+  const audioRef = useRef(null);
   const inputRef = useRef(null);
   if (!inputRef.current)
     inputRef.current = createResponseInput({
@@ -91,6 +125,46 @@ export default function VotePage({ api = authenticatedVoteApi }) {
       now: connection.now,
     });
   const input = inputRef.current;
+  useEffect(() => {
+    const audio = preparedAudio || createVoteAudio({ onStatusChange: setSoundStatus });
+    if (preparedAudio) {
+      audio.setStatusListener(setSoundStatus);
+      audio.setVolume(0.4);
+    }
+    audioRef.current = audio;
+    audio.start();
+    const unlockAudio = (event) => {
+      if (event.target instanceof Element && event.target.closest(".vote-audio-toggle")) return;
+      audio.start();
+    };
+    const retryWhenVisible = () => {
+      if (!document.hidden) audio.start();
+    };
+    document.addEventListener("pointerdown", unlockAudio);
+    document.addEventListener("keydown", unlockAudio);
+    document.addEventListener("visibilitychange", retryWhenVisible);
+    window.addEventListener("focus", retryWhenVisible);
+    return () => {
+      document.removeEventListener("pointerdown", unlockAudio);
+      document.removeEventListener("keydown", unlockAudio);
+      document.removeEventListener("visibilitychange", retryWhenVisible);
+      window.removeEventListener("focus", retryWhenVisible);
+      if (preparedAudio) audio.setStatusListener(() => {});
+      else audio.stop();
+      audioRef.current = null;
+    };
+  }, [preparedAudio]);
+
+  function toggleSound() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.getStatus() === "blocked") {
+      audio.start();
+      return;
+    }
+    audio.setEnabled(!audio.isEnabled());
+  }
+
   useEffect(() => {
     connection.start();
     const interval = setInterval(() => {
@@ -125,6 +199,8 @@ export default function VotePage({ api = authenticatedVoteApi }) {
       message={message}
       status={state.message}
       input={input}
+      soundStatus={soundStatus}
+      onToggleSound={toggleSound}
     />
   );
 }

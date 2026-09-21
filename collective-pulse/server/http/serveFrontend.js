@@ -21,6 +21,8 @@ export function createFrontendHandler(dist) {
     ".css": "text/css; charset=utf-8",
     ".svg": "image/svg+xml",
     ".png": "image/png",
+    ".mp3": "audio/mpeg",
+    ".wav": "audio/wav",
     ".woff2": "font/woff2",
   };
   return (request, response, url) => {

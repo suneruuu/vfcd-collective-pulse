@@ -10,6 +10,13 @@ const { VoteShell } = load("src/vote/VotePage.jsx");
 const { VoteAuthShell, oauthErrorFromLocation, voteRedirectUrl } = load(
   "src/vote/VoteAuthGate.jsx",
 );
+const {
+  VOTE_AUTH_MESSAGE,
+  VOTE_AUTH_POPUP_KEY,
+  beginVoteOAuth,
+  completeVoteAuthPopup,
+  isVoteAuthPopup,
+} = load("src/vote/popupAuth.js");
 const Queue = load("shared/prompt-queue.js").default;
 
 async function main() {
@@ -145,7 +152,19 @@ async function main() {
     assert.equal((await api.getQueue()).revision, 0);
 
     const html = renderToStaticMarkup(React.createElement(VoteShell, { enabled: true, input: {} }));
-    assert.equal((html.match(/<button/g) || []).length, 2);
+    assert.equal((html.match(/<button/g) || []).length, 3);
+    assert(html.includes('aria-label="Background sound" aria-pressed="true"'));
+    const blockedAudio = renderToStaticMarkup(
+      React.createElement(VoteShell, {
+        enabled: true,
+        input: {},
+        soundStatus: "blocked",
+      }),
+    );
+    assert(blockedAudio.includes('aria-label="Start background sound" aria-pressed="false"'));
+    const soundButton = html.match(/<button class="vote-audio-toggle"[\s\S]*?<\/button>/)?.[0];
+    assert(soundButton?.includes("<svg"), "The sound control needs a speaker icon");
+    assert(!soundButton.includes("<span"), "The sound control must be icon-only");
     assert(html.includes("YES") && html.includes("NO") && html.includes("Does Vietnam"));
     assert(!html.includes("<canvas") && !html.includes("Question Queue"));
     const offline = renderToStaticMarkup(
@@ -195,6 +214,96 @@ async function main() {
       }),
       "User cancelled",
     );
+    const popupStore = new Map();
+    let opened = false;
+    let prepared = false;
+    let popupUrl = "";
+    let popupMessage;
+    const popup = {
+      closed: false,
+      sessionStorage: {
+        getItem: (key) => popupStore.get(key) || null,
+        setItem: (key, value) => popupStore.set(key, value),
+        removeItem: (key) => popupStore.delete(key),
+      },
+      location: {
+        origin: "https://example.com",
+        replace: (url) => {
+          popupUrl = url;
+        },
+      },
+      opener: {
+        postMessage: (message, origin) => {
+          popupMessage = { message, origin };
+        },
+      },
+      close() {
+        this.closed = true;
+      },
+    };
+    const popupWindow = {
+      open() {
+        assert(prepared, "Prepare audio in the login click before opening Google");
+        opened = true;
+        return popup;
+      },
+      location: { origin: "https://example.com" },
+    };
+    const popupResult = await beginVoteOAuth({
+      auth: {
+        async signInWithOAuth({ provider, options }) {
+          assert(opened, "Open the popup during the login click");
+          assert.equal(provider, "google");
+          assert.equal(options.skipBrowserRedirect, true);
+          assert.equal(options.redirectTo, "https://example.com/vote/");
+          return { data: { url: "https://auth.example/authorize" }, error: null };
+        },
+      },
+      redirectTo: "https://example.com/vote/",
+      windowRef: popupWindow,
+      onBeforePopup: () => {
+        prepared = true;
+      },
+    });
+    assert.equal(popupResult.popup, popup);
+    assert.equal(popupUrl, "https://auth.example/authorize");
+    assert.equal(popupStore.get(VOTE_AUTH_POPUP_KEY), "1");
+    assert(isVoteAuthPopup(popup));
+    assert(
+      completeVoteAuthPopup({
+        session: { access_token: "access", refresh_token: "refresh" },
+        windowRef: popup,
+      }),
+    );
+    assert.deepEqual(popupMessage, {
+      message: {
+        type: VOTE_AUTH_MESSAGE,
+        tokens: { access_token: "access", refresh_token: "refresh" },
+        error: "",
+      },
+      origin: "https://example.com",
+    });
+    assert.equal(popup.closed, true);
+    assert.equal(isVoteAuthPopup(popup), false);
+    let popupUnavailable = false;
+    await beginVoteOAuth({
+      auth: {
+        async signInWithOAuth({ options }) {
+          assert.equal(
+            options.skipBrowserRedirect,
+            false,
+            "Blocked popups use the existing redirect",
+          );
+          return { data: { url: "https://auth.example/authorize" }, error: null };
+        },
+      },
+      redirectTo: "https://example.com/vote/",
+      windowRef: { open: () => null },
+      onPopupUnavailable: () => {
+        popupUnavailable = true;
+      },
+    });
+    assert(popupUnavailable);
     console.log(
       "SDK/HTTP checks passed: authenticated phone and anonymous kiosk submissions share results, OAuth routes resolve, lost acknowledgements deduplicate, and vote states render.",
     );
