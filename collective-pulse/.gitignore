@@ -4,4 +4,6 @@ dist/
 .env
 .env.local
 .env.*.local
+.rag-context/
+public/logs/
 
